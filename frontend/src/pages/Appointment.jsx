@@ -20,46 +20,59 @@ const Appointment = () => {
     setDocInfo(docInfo);
   }
   
-  const getAvailableSlots=async()=>{
+  const getAvailableSlots = async () => {
   setDocSlots([]);
 
-  // getting current date
-  let today=new Date();
+  let today = new Date();
+  let startDayIndex = 0;
 
-  for(let i=0;i<7;i++){
-    // getting date with index
-    let currentDate=new Date(today);
-    currentDate.setDate(today.getDate()+i);
-    //setting end time of the date with index
-    let endTime=new Date();
-    endTime.setDate(today.getDate()+i);
-    endTime.setHours(21,0,0,0);
-    // setting hours
-    if(today.getDate()===currentDate.getDate()){
-      currentDate.setHours(currentDate.getHours()>10 ? currentDate.getHours()+1:10 );
-      currentDate.setMinutes(currentDate.getMinutes()>30?30:0);
-    }
-    else{
+  // ⏰ If it's past 9 PM, skip today and start from tomorrow
+  if (today.getHours() >= 21) {
+    startDayIndex = 1;
+  }
+
+  for (let i = startDayIndex; i < startDayIndex + 7; i++) {
+    let currentDate = new Date(today);
+    currentDate.setDate(today.getDate() + i);
+
+    // end time of that day
+    let endTime = new Date();
+    endTime.setDate(today.getDate() + i);
+    endTime.setHours(21, 0, 0, 0);
+
+    // set starting time
+    if (i === 0) {
+      // today → start from now (rounded) or 10 AM
+      let now = new Date();
+      let startHour = Math.max(now.getHours(), 10);
+      currentDate.setHours(startHour);
+      currentDate.setMinutes(now.getMinutes() > 30 ? 30 : 0);
+    } else {
+      // future days → always start from 10:00 AM
       currentDate.setHours(10);
       currentDate.setMinutes(0);
     }
 
-    let timeSlots=[];
+    let timeSlots = [];
+    while (currentDate < endTime) {
+      let formattedTime = currentDate.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-    while(currentDate < endTime){
-    let formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      timeSlots.push({
+        datetime: new Date(currentDate),
+        time: formattedTime,
+      });
 
-    // add slot to array 
-    timeSlots.push({
-      datetime:new Date(currentDate),
-      time:formattedTime
-    })
-    // increase current time by 30 minutes
-    currentDate.setMinutes(currentDate.getMinutes()+30);
+      currentDate.setMinutes(currentDate.getMinutes() + 30);
+    }
+
+    // always push (even if empty) so the day shows up
+    setDocSlots((prev) => [...prev, timeSlots]);
   }
-  setDocSlots(prev =>([...prev,timeSlots]));
-  }
-  }
+};
+
 
   useEffect(()=>{
   fetchDocInfo();

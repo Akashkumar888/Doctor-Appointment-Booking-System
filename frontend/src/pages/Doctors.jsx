@@ -11,6 +11,8 @@ const Doctors = () => {
   // Backend (Express) → req.params
   const { doctors } = useContext(AppContext);
   const [filterDoc, setFilterDoc] = useState([]);
+  const [showFilter, setShowFilter] = useState(false);
+
   const navigate = useNavigate();
   const applyFilter = () => {
     if (speciality) {
@@ -28,6 +30,7 @@ const Doctors = () => {
     <div>
       <p className="text-gray-600">Browse through the doctors specialist.</p>
       <div className="flex flex-col sm:flex-row items-start gap-5 mt-5">
+        <button>Filters</button>
         <div className="flex flex-col gap-4 text-sm text-gray-600">
           <p
             onClick={() =>
