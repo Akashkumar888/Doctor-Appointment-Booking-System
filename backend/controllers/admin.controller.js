@@ -1,6 +1,8 @@
 import doctorModel from '../models/doctor.model.js'
 import {v2 as cloudinary} from 'cloudinary'
 import {validationResult} from 'express-validator'
+import jwt from 'jsonwebtoken'
+
 // api for adding doctor 
 export const addDoctor=async(req,res)=>{
   try {
@@ -62,18 +64,17 @@ export const addDoctor=async(req,res)=>{
 
 export const loginAdmin=async(req,res)=>{
   try {
-    const {email,passowrd}=req.body;
+    const {email,password}=req.body;
     if(email!==process.env.ADMIN_EMAIL){
       return res.status(401).json({success:false,message:"Invalid credentials"});
     }
-    if(passowrd!==process.env.ADMIN_PASSWORD){
+    if(password!==process.env.ADMIN_PASSWORD){
       return res.status(401).json({success:false,message:"Invalid credentials"});
     }
 
-    const doctor=await doctorModel.findOne({email});
-    const token=await doctor.generateAuthToken();
+    const token=jwt.sign(email+password,process.env.JWT_SECRET);
     
-    res.status(201).json({success:false,mesage:"Login successfully",token});
+    res.status(201).json({success:true,mesage:"Login successfully",token});
   } catch (error) {
     console.log(error);
     res.status(500).json({success:false,message:error.message});
