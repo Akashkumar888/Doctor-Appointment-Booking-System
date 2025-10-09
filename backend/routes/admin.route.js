@@ -21,6 +21,6 @@ adminRouter.post("/add-doctor",authAdmin, upload.single("image"), // multer firs
   body('password').isLength({min:8}).withMessage("Please enter a strong message"),
 ],addDoctor);
 
-adminRouter.post("/login",authAdmin, loginAdmin);
+adminRouter.post("/login", loginAdmin);
 
 export default adminRouter;

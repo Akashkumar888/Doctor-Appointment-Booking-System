@@ -1,5 +1,5 @@
 
-import { createContext } from "react";
+import { createContext, useState } from "react";
 
 // create context
 const AdminContext=createContext();
@@ -8,8 +8,14 @@ const AdminContext=createContext();
 
 export const AdminContextProvider=({children})=>{
 
-  const value={
+  const [aToken, setAToken] = useState(localStorage.getItem("aToken") || '');
+  // const [aToken, setAToken] = useState(localStorage.getItem("aToken")?localStorage.getItem("aToken") : '');
 
+
+
+  const value={
+   aToken,
+   setAToken,
   };
 
   return (
