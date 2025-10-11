@@ -1,10 +1,11 @@
 
 import express from 'express'
 import upload from '../middlewares/multer.middleware.js';
-import { addDoctor, loginAdmin } from '../controllers/admin.controller.js';
+import { addDoctor, allDoctors, loginAdmin } from '../controllers/admin.controller.js';
 const adminRouter=express.Router();
 import {body} from 'express-validator';
-import { authAdmin } from './authAdmin.middleware.js';
+import { authAdmin } from '../middlewares/authAdmin.middleware.js';
+import { changeAvailability } from '../controllers/doctor.controller.js';
 
 
 // backend image store krne ke liye multer.diskStorage or multer.memoryStorage use krte hai for upload single image or multiple imaeges upload 
@@ -22,5 +23,7 @@ adminRouter.post("/add-doctor",authAdmin, upload.single("image"), // multer firs
 ],addDoctor);
 
 adminRouter.post("/login", loginAdmin);
+adminRouter.post("/all-doctors",authAdmin,allDoctors);
+adminRouter.post("/change-availability",authAdmin,changeAvailability);
 
 export default adminRouter;
