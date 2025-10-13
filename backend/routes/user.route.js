@@ -1,22 +1,30 @@
 
 import express from 'express'
 import { body } from 'express-validator';
-import { authUser } from '../middlewares/auth.middleware.js';
-import { getUser, loginUser, logoutUser, registerUser } from '../controllers/user.controller.js';
+import { authUser } from '../middlewares/authUser.middleware.js';
+import {  getProfile, loginUser, logoutUser, registerUser, updateProfile } from '../controllers/user.controller.js';
+import upload from '../middlewares/multer.middleware.js';
 const userRouter=express.Router();
 
 
 userRouter.post('/register',[
+  body('name').notEmpty().withMessage("Name is required"),
   body('email').isEmail().withMessage("Invalid email"),
-  body('password').isLength({min:6}).withMessage("Please enter a strong password")
+  body('password').isLength({min:8}).withMessage("Please enter a strong password")
 ],
 registerUser);
 
-userRouter.post("/login",[
+userRouter.post("/login", [
   body('email').isEmail().withMessage('Invalid email'),
   body('password').isLength({min:8}).withMessage("Please enter a strong password")
-],loginUser);
-userRouter.get("/data",authUser,getUser);
+], loginUser);
+
+// only here add authUser
+userRouter.get("/get-profile",authUser,getProfile);
 userRouter.post("/logout",authUser,logoutUser);
+userRouter.put("/update-profile",authUser,upload.single('image'),updateProfile);
+
+// PUT is usually for updating an existing resource.
+// You should use PUT for your updateProfile route because the user already exists, and you are updating their data.
 
 export default userRouter;

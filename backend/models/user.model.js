@@ -37,6 +37,10 @@ const userSchema=new mongoose.Schema({
 // Hash password before saving
 // Pre-save hook ensures you never store plain text passwords.
 // Use pre('save') for password hashing + instance methods for comparison & token generation.
+// Runs before saving the document (pre("save")).
+// 🔹 Checks if the password field was modified (isModified("password")).
+// 🔹 If yes → generates a salt → hashes the password using bcrypt.
+// 🔹 Prevents rehashing when other fields (like email) are updated.
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

@@ -1,13 +1,42 @@
 
 import React, { useState } from 'react'
 import {assets} from '../../src/assets/assets'
-import {NavLink, useNavigate} from 'react-router-dom'
+import {NavLink, useLocation, useNavigate} from 'react-router-dom'
+import { useContext } from 'react';
+import { AppContext } from '../context/AppContext';
+import { toast } from 'react-toastify';
+import api from '../api/axios';
 
 const Navbar = () => {
 
   const navigate=useNavigate();
+  const location = useLocation();
+  // 👇 decide whether to show login or signup form
+  const [state, setState] = useState(location.state?.fromLogout ? 'Login' : 'Sign up');
+
   const [showMenu, setShowMenu] = useState(false);
-  const [token, setToken] = useState(true);
+  const {token, setToken} = useContext(AppContext);
+
+  // ✅ Proper logout handler
+  const logoutHandler = async () => {
+    try {
+      // call backend API to blacklist token
+      await api.post('/api/user/logout', {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // remove token locally after successful logout
+      setToken('');
+      localStorage.removeItem('token');
+      navigate('/login', { state: { fromLogout: true } });
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Logout failed');
+    }
+  };
+
 
   return (
     <div className='flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400'>
@@ -40,7 +69,7 @@ const Navbar = () => {
               <div className='min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4'>
                 <p onClick={()=>navigate("my-profile")} className='hover:text-black cursor-pointer'>My Profile</p>
                 <p onClick={()=>navigate("/my-appointments")} className='hover:text-black cursor-pointer'>My Appointments</p>
-                <p onClick={()=>setToken(false)} className='hover:text-black cursor-pointer'>Logout</p>
+                <p onClick={logoutHandler} className='hover:text-black cursor-pointer'>Logout</p>
               </div>
             </div>
           </div>

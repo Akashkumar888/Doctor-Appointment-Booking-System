@@ -8,11 +8,13 @@ export const addDoctor=async(req,res)=>{
   try {
     const errors=validationResult(req);
     if(!errors.isEmpty()){ // empty nhi hai mtlb error hai
-      return res.status(401).json({success:false,message:errors.array()});
+      return res.status(401).json({success:false,message:errors.array().map(err => err.msg)});
     }
 
     const {name,email,password,speciality,degree,experience,about,fees,address}=req.body;
+
     const imageFile=req.file;
+
     // checking for all data to add doctor
     if(!name ||!email || !password || !speciality || !degree || !experience || !about || !fees || !address ){
       return res.status(400).json({success:false,message:'All fields are required.'});
@@ -64,6 +66,10 @@ export const addDoctor=async(req,res)=>{
 
 export const loginAdmin=async(req,res)=>{
   try {
+    const errors=validationResult(req);
+    if(!errors.isEmpty()){ // empty nhi hai mtlb error hai
+      return res.status(401).json({success:false,message:errors.array().map(err => err.msg)});
+    }
     const {email,password}=req.body;
     if(email!==process.env.ADMIN_EMAIL){
       return res.status(401).json({success:false,message:"Invalid credentials"});
@@ -74,7 +80,7 @@ export const loginAdmin=async(req,res)=>{
 
     const token=jwt.sign(email+password,process.env.JWT_SECRET);
     
-    res.status(201).json({success:true,mesage:"Login successfully",token});
+    res.status(201).json({success:true, message:"Login successfully", token});
   } catch (error) {
     console.log(error);
     res.status(500).json({success:false,message:error.message});

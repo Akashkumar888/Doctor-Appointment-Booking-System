@@ -1,24 +1,48 @@
 import React, { useState } from "react";
-import { assets } from "../assets/assets";
+import { useContext } from "react";
+import { AppContext } from "../context/AppContext";
+import { toast } from "react-toastify";
+import api from "../api/axios";
 
 const MyProfile = () => {
-  const [userData, setUserData] = useState({
-    name: "Edward Vincent",
-    image: assets.profile_pic,
-    email: "richardjameswap@gmail.com",
-    phone: "+1 123 456 7890",
-    address: {
-      line1: "57th Cross, Richmond",
-      line2: "Circle, Church Road, London",
-    },
-    gender: "Male",
-    dob: "2006-12-12",
-  });
+  const {userData, setUserData,token,loadUserProfileData} = useContext(AppContext);
 
   const [isEdit, setIsEdit] = useState(false);
-  return (
+  
+  const handleSave = async () => {
+  try {
+    const formData = new FormData();
+    formData.append("name", userData.name);
+    formData.append("phone", userData.phone);
+    formData.append("dob", userData.dob);
+    formData.append("gender", userData.gender);
+    formData.append("address", JSON.stringify(userData.address));
+    // if image upload implemented:
+    formData.append("image", userData.imageFile);
+
+    const { data } = await api.put("/api/user/update-profile", formData, {
+      headers: {
+         Authorization: `Bearer ${token}` 
+        },
+    });
+
+    if (data.success) {
+      toast.success(data.message);
+      // reload profile data from server
+      loadUserProfileData();
+      setIsEdit(false);
+    } else {
+      toast.error(data.message);
+    }
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+
+
+  return userData && (
     <div className="max-w-lg flex flex-col gap-2 text-sm">
-      <img className="w-36 rounded" src={userData.image} alt="" />
+      <img className="w-36 rounded" src={userData?.image} alt="" />
       {
         // ✅ update one thing properly other will remain same spread operator
         isEdit ? (
@@ -29,7 +53,7 @@ const MyProfile = () => {
             onChange={(e) => setUserData({ ...userData, name: e.target.value })}
           />
         ) : (
-          <p className="font-medium text-3xl text-neutral-800 mt-4">{userData.name}</p>
+          <p className="font-medium text-3xl text-neutral-800 mt-4">{userData?.name}</p>
         )
       }
       <hr  className="bg-zinc-400 h-[1px] border-none"/>
@@ -37,7 +61,7 @@ const MyProfile = () => {
         <p className="text-neutral-500 underline mt-3">CONTACT INFORMATION</p>
         <div className="grid grid-cols-[1fr_3fr] gap-y-2.5 mt-3 text-neutral-700" >
           <p className="font-medium">Email id:</p>
-          <p className="text-blue-500">{userData.email}</p>
+          <p className="text-blue-500">{userData?.email}</p>
           <p className="font-medium">Phone:</p>
           {
             // ✅ update one thing properly other will remain same spread operator
@@ -51,7 +75,7 @@ const MyProfile = () => {
                 }
               />
             ) : (
-              <p className="text-blue-400">{userData.phone}</p>
+              <p className="text-blue-400">{userData?.phone}</p>
             )
           }
           <p className="font-medium ">Address:</p>
@@ -85,9 +109,9 @@ const MyProfile = () => {
               </p>
             ) : (
               <p className="text-gray-500">
-                {userData.address.line1}
+                {userData.address?.line1}
                 <br />
-                {userData.address.line2}
+                {userData.address?.line2}
               </p>
             )
           }
@@ -105,20 +129,20 @@ const MyProfile = () => {
             <option value="Female">Female</option>
           </select>
         ) : (
-          <p className="text-gray-400">{userData.gender}</p>
+          <p className="text-gray-400">{userData?.gender}</p>
         )
       }
       <p className="font-medium">Birthday:</p>{
         isEdit ? 
         <input className="max-w-28 bg-gray-100" type="date" value={userData.dob} onChange={(e)=>setUserData({...userData,dob:e.target.value})}/>
-        : <p className="text-gray-400">{userData.dob}</p>
+        : <p className="text-gray-400">{userData?.dob}</p>
       }
         </div>
       </div>
       <div className="mt-10">
         {
           isEdit ?
-          <button className="border border-[#5f6FFF] px-8 py-2 rounded-full cursor-pointer hover:bg-[#5f6FFF] hover:text-white transition-all" onClick={()=>setIsEdit(false)}>Save information</button>
+          <button className="border border-[#5f6FFF] px-8 py-2 rounded-full cursor-pointer hover:bg-[#5f6FFF] hover:text-white transition-all" onClick={handleSave}>Save information</button>
           : <button className="border border-[#5f6FFF] px-8 py-2 rounded-full cursor-pointer hover:bg-[#5f6FFF] hover:text-white transition-all" onClick={()=>setIsEdit(true)}>edit</button>
         }
       </div>
