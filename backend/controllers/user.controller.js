@@ -1,8 +1,9 @@
 import userModel from "../models/user.model.js";
 import { validationResult } from "express-validator";
-import jwt from 'jsonwebtoken'
 import blackListModel from '../models/blackListToken.model.js'
 import {v2 as cloudinary} from 'cloudinary'
+import doctorModel from "../models/doctor.model.js";
+import appointmentModel from "../models/appointment.model.js";
 
 // api to register to user
 export const registerUser=async(req,res)=>{
@@ -39,7 +40,7 @@ export const registerUser=async(req,res)=>{
     //     Register → issue token so the user is instantly logged in after signup.
     res.status(201).json({
       success:true,
-      message:'User created Successfully',token});
+      message:'User created Successfully!',token});
 
   } catch (error) {
     console.log(error);
@@ -74,7 +75,7 @@ export const loginUser=async(req,res)=>{
 
    res.json({
     success:true,
-    message:'Login successfully',
+    message:'Login successfully!',
     token
     });
 
@@ -108,7 +109,7 @@ export const logoutUser=async(req,res)=>{
     const token=authHeader.split(" ")[1];
     if(!token)return res.status(401).json({success:false,message:"Token Not found"});
     await blackListModel.create({token});
-    res.json({ success: true, message: "Logged out successfully" });
+    res.json({ success: true, message: "Logged out successfully!" });
 
   } catch (error) {
     console.log(error);
@@ -133,7 +134,7 @@ export const updateProfile=async(req,res)=>{
     // find and update user
      await userModel.findByIdAndUpdate(
       userId,
-      { name, phone, address, dob, gender },
+      { name, phone, address:JSON.parse(address), dob, gender },
       { new: true } // returns updated document
     );
     
@@ -152,7 +153,7 @@ export const updateProfile=async(req,res)=>{
     // ✅ send success response
     res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
+      message: "Profile updated successfully!",
     });
 
   } catch (error) {
@@ -160,3 +161,111 @@ export const updateProfile=async(req,res)=>{
     res.status(500).json({success:false,message:error.message});
   }
 }
+
+
+// apit to book Appointment
+export const bookAppointment=async(req,res)=>{
+  try {
+    const userId = req.user._id; // ✅ comes from token authUser middleware, not body
+    const {docId,slotDate,slotTime}=req.body;
+
+    const docData=await doctorModel.findById(docId).select("-password");
+    if (!docData) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+
+    if(!docData.available){
+      return res.status(401).json({success:false,message:"Doctor not available"});
+    }
+    let slots_booked=docData.slots_booked;
+
+    // checking for slot availablity
+    if(slots_booked[slotDate]){
+      if(slots_booked[slotDate].includes(slotTime)){
+        return res.status(200).json({success:false,message:"Slots not available"})
+      }
+      else{
+        slots_booked[slotDate].push(slotTime);
+      }
+    } else{
+      slots_booked[slotDate]=[];
+      slots_booked[slotDate].push(slotTime);
+    }
+    
+    const userData=await userModel.findById(userId).select("-password");
+    if (!userData) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    delete docData.slots_booked;
+
+    await appointmentModel.create({
+        userId,
+        docId,
+        userData,
+        docData,
+        amount:docData.fees,
+        slotTime,
+        slotDate,
+        date:Date.now(),
+    });
+
+    // save in slots data in docData
+    // Update doctor’s booked slots
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
+    res.status(200).json({ success: true, message: 'Appointment booked successfully!' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+
+
+// api to get user appointment for my appointment page
+export const listAppointment=async(req,res)=>{
+  try {
+    const userId = req.user._id; // ✅ comes from token authUser middleware, not body
+    const appointments=await appointmentModel.find({userId}); // all the appointment
+
+    res.status(200).json({success:true,appointments});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+
+
+// api to cancel appointment for my appointment page
+export const cancelAppointment=async(req,res)=>{
+  try {
+    const userId = req.user._id; // ✅ comes from token authUser middleware, not body
+    const {appointmentId}=req.body;
+    const appointmentData=await appointmentModel.findById(appointmentId); // all the appointment
+
+    // verify appointment User
+    if (appointmentData.userId.toString() !== userId.toString()) {
+      return res.status(401).json({ success: false, message: "Unauthorized action" });
+    }
+
+    await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true}); // all the appointment
+    // releasing doctor slots
+    const {docId,slotDate,slotTime}=appointmentData;
+
+    const doctorData=await doctorModel.findById(docId);
+
+    let slots_booked=doctorData.slots_booked;
+
+    if(slots_booked[slotDate]) {
+    slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
+    }
+
+    await doctorModel.findByIdAndUpdate(docId,{slots_booked});
+    res.status(200).json({success:true,message:"Appointment cancelled successfully!"});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+
+
+// api to online payment

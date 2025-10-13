@@ -62,6 +62,7 @@ const AppContextProvider=({children})=>{ // direct destructuring using {}
 
   const value={
     doctors,
+    getDoctorsData,
     currencySymbol,
     setDoctors,
     token,

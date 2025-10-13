@@ -2,7 +2,7 @@
 import express from 'express'
 import { body } from 'express-validator';
 import { authUser } from '../middlewares/authUser.middleware.js';
-import {  getProfile, loginUser, logoutUser, registerUser, updateProfile } from '../controllers/user.controller.js';
+import {  bookAppointment, cancelAppointment, getProfile, listAppointment, loginUser, logoutUser, registerUser, updateProfile } from '../controllers/user.controller.js';
 import upload from '../middlewares/multer.middleware.js';
 const userRouter=express.Router();
 
@@ -23,6 +23,9 @@ userRouter.post("/login", [
 userRouter.get("/get-profile",authUser,getProfile);
 userRouter.post("/logout",authUser,logoutUser);
 userRouter.put("/update-profile",authUser,upload.single('image'),updateProfile);
+userRouter.post("/book-appointment",authUser,bookAppointment);
+userRouter.get("/appointments",authUser,listAppointment);
+userRouter.post("/cancel-appointment",authUser,cancelAppointment);
 
 // PUT is usually for updating an existing resource.
 // You should use PUT for your updateProfile route because the user already exists, and you are updating their data.

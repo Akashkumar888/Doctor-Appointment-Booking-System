@@ -3,13 +3,15 @@ import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import api from "../api/axios";
+import {assets} from '../assets/assets'
 
 const MyProfile = () => {
   const {userData, setUserData,token,loadUserProfileData} = useContext(AppContext);
 
   const [isEdit, setIsEdit] = useState(false);
+  const [image, setImage] = useState(false);
   
-  const handleSave = async () => {
+  const updateUserProfileData = async () => {
   try {
     const formData = new FormData();
     formData.append("name", userData.name);
@@ -17,8 +19,12 @@ const MyProfile = () => {
     formData.append("dob", userData.dob);
     formData.append("gender", userData.gender);
     formData.append("address", JSON.stringify(userData.address));
+
     // if image upload implemented:
-    formData.append("image", userData.imageFile);
+    // ✅ if a new image was selected, append it
+    if(image){
+      formData.append("image",image);
+    }
 
     const { data } = await api.put("/api/user/update-profile", formData, {
       headers: {
@@ -29,12 +35,14 @@ const MyProfile = () => {
     if (data.success) {
       toast.success(data.message);
       // reload profile data from server
-      loadUserProfileData();
+      await loadUserProfileData();
       setIsEdit(false);
+      setImage(false);
     } else {
       toast.error(data.message);
     }
   } catch (error) {
+    console.log(error);
     toast.error(error.message);
   }
 };
@@ -42,7 +50,17 @@ const MyProfile = () => {
 
   return userData && (
     <div className="max-w-lg flex flex-col gap-2 text-sm">
-      <img className="w-36 rounded" src={userData?.image} alt="" />
+      {
+        isEdit ? 
+        <label htmlFor="image">
+          <div className="inline-block relative cursor-pointer">
+            <img className="w-36 rounded opacity-75" src={image?URL.createObjectURL(image):userData.image} alt="" />
+            <img className="w-10 absolute bottom-12 right-12" src={image? '' : assets.upload_icon} alt="" />
+          </div>
+          <input type="file" id="image" hidden onChange={(e)=>setImage(e.target.files[0])}/>
+        </label>
+        : <img className="w-36 rounded" src={userData?.image} alt="" />
+      }
       {
         // ✅ update one thing properly other will remain same spread operator
         isEdit ? (
@@ -142,7 +160,7 @@ const MyProfile = () => {
       <div className="mt-10">
         {
           isEdit ?
-          <button className="border border-[#5f6FFF] px-8 py-2 rounded-full cursor-pointer hover:bg-[#5f6FFF] hover:text-white transition-all" onClick={handleSave}>Save information</button>
+          <button className="border border-[#5f6FFF] px-8 py-2 rounded-full cursor-pointer hover:bg-[#5f6FFF] hover:text-white transition-all" onClick={updateUserProfileData}>Save information</button>
           : <button className="border border-[#5f6FFF] px-8 py-2 rounded-full cursor-pointer hover:bg-[#5f6FFF] hover:text-white transition-all" onClick={()=>setIsEdit(true)}>edit</button>
         }
       </div>

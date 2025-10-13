@@ -1,11 +1,14 @@
 
 import React, { useContext, useEffect, useState } from 'react'
-import { data, useParams } from 'react-router-dom'
+import {  useNavigate, useParams } from 'react-router-dom'
 import { AppContext } from '../context/AppContext';
 import { assets } from '../assets/assets';
 import RelatedDoctors from '../components/RelatedDoctors';
+import api from '../api/axios';
+import { toast } from 'react-toastify';
 
 const Appointment = () => {
+  const navigate=useNavigate();
   const [docInfo,setDocInfo]=useState(null);
   const [docSlots,setDocSlots]=useState([]);
   const [slotIndex,setSlotIndex]=useState(0);
@@ -13,7 +16,7 @@ const Appointment = () => {
   const daysOfWeek=['SUN','MON',"TUE","WED","THU","FRI","SAT"];
 
   const {docId}=useParams();
-  const {doctors,currencySymbol}=useContext(AppContext);
+  const {doctors,currencySymbol,token,getDoctorsData}=useContext(AppContext);
 
   const fetchDocInfo=async()=>{
     const docInfo=doctors.find(doc => doc._id === docId);
@@ -60,10 +63,22 @@ const Appointment = () => {
         minute: "2-digit",
       });
 
-      timeSlots.push({
+      let day=currentDate.getDate();
+      let month=currentDate.getMonth()+1;
+      let year=currentDate.getFullYear();
+
+      const slotDate=day + "-" + month + "-" + year;
+      const slotTime=formattedTime;
+
+      const isSlotAvailable=docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false :true;
+      
+     if(isSlotAvailable){
+      //add slot to array 
+       timeSlots.push({
         datetime: new Date(currentDate),
         time: formattedTime,
       });
+     }
 
       currentDate.setMinutes(currentDate.getMinutes() + 30);
     }
@@ -72,6 +87,38 @@ const Appointment = () => {
     setDocSlots((prev) => [...prev, timeSlots]);
   }
 };
+
+const bookAppointment=async()=>{
+  if(!token){
+    toast.warn("Login to book appointment");
+    return navigate("/login");
+  }
+  try {
+    const date=docSlots[slotIndex][0].datetime;
+    let day=date.getDate();
+    let month=date.getMonth()+1;
+    let year=date.getFullYear();
+
+    const slotDate=day + "-" + month + "-" + year;
+
+    const {data}=await api.post(`/api/user/book-appointment`,{docId,slotDate,slotTime},{
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    });
+    if(data.success){
+      toast.success(data.message);
+      getDoctorsData();
+      navigate("/my-appointments")
+    }
+    else{
+      toast.error(data.message);
+    }
+  } catch (error) {
+    console.log(error);
+    toast.error(error.message);
+  }
+}
 
 
   useEffect(()=>{
@@ -84,7 +131,8 @@ const Appointment = () => {
   
   useEffect(()=>{
   console.log(docSlots);
-  },[docSlots])
+  },[docSlots]);
+
 
   return docInfo && (
     <div>
@@ -138,7 +186,7 @@ const Appointment = () => {
         }
       </div>
 
-    <button className='bg-[#5f6FFF] text-white text-sm font-light px-14 py-3
+    <button onClick={bookAppointment} className='bg-[#5f6FFF] text-white text-sm font-light px-14 py-3
     rounded-full my-6 cursor-pointer'>Book an appointment</button>
       </div>
 
@@ -150,3 +198,17 @@ const Appointment = () => {
 }
 
 export default Appointment
+
+// ⚛️ React Reconciliation — The Core Concept
+// 🔹 Definition
+// Reconciliation in React is the process by which React updates the DOM efficiently when your component’s state or props change.
+// Instead of re-rendering everything from scratch, React compares the new virtual DOM tree with the previous one, finds the differences (diffing), and updates only the parts that actually changed in the real DOM.
+// 🔹 How It Works (Step-by-Step)
+// You change the state or props
+// → This triggers a re-render of that component.
+// React creates a new Virtual DOM
+// → A lightweight copy of the real DOM (just JavaScript objects).
+// React compares (diffs) the new Virtual DOM with the previous Virtual DOM
+// → This is the reconciliation process.
+// React updates only what changed in the real DOM.
+// → This makes React very fast and efficient, compared to directly manipulating the DOM.
