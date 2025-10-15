@@ -4,6 +4,7 @@ import {assets} from '../assets/assets'
 import AdminContext from '../context/AdminContext';
 import api from '../api/axios'
 import { toast } from 'react-toastify';
+import DoctorContext from '../context/DoctorContext';
 
 const Login = () => {
   const [state,setState]=useState('Admin');
@@ -11,15 +12,18 @@ const Login = () => {
   const [password,setPassword]=useState('');
 
   const {aToken,setAToken}=useContext(AdminContext);
+  const {dToken,setDToken}=useContext(DoctorContext);
 
   const onSubmitHandler=async(event)=>{
     event.preventDefault();
     let url = state === 'Admin' ? 'admin' : 'doctor';
+    let token=state === 'Admin' ? 'aToken' : 'dToken';
+    let setToken=state === 'Admin' ? setAToken : setDToken
     try {
         const {data}=await api.post(`/api/${url}/login`,{email,password});
         if(data.success){
-          localStorage.setItem("aToken",data.token); // when we reload the webpage admin login using localStorage 
-          setAToken(data.token);   // ✅ update context state
+          localStorage.setItem(`${token}`,data.token); // when we reload the webpage admin login using localStorage 
+          setToken(data.token);   // ✅ update context state
           toast.success("Login successful");
         }  
         else{

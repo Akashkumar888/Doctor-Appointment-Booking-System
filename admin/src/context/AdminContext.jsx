@@ -13,6 +13,8 @@ export const AdminContextProvider=({children})=>{
   const [aToken, setAToken] = useState(localStorage.getItem("aToken") || '');
   // const [aToken, setAToken] = useState(localStorage.getItem("aToken")?localStorage.getItem("aToken") : '');
   const [doctors,setDoctors]=useState([]);
+  const [appointments,setAppointments]=useState([]);
+  const [dashData,setDashData]=useState(false);
 
   const getAllDoctors=async()=>{
        try {
@@ -52,12 +54,81 @@ export const AdminContextProvider=({children})=>{
     }
   }
 
+
+  const getAllAppointments=async()=>{
+    try {
+      const {data}=await api.get(`/api/admin/appointments`,{
+        headers:{
+          Authorization:`Bearer ${aToken}`
+        }
+      });
+      if(data.success){
+       setAppointments(data.appointments);
+      }
+      else{
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
+  }
+
+  const cancelAppointment=async(appointmentId)=>{
+    try {
+      const {data}=await api.post(`/api/admin/cancel-appointment`,{appointmentId},{
+        headers:{
+          Authorization:`Bearer ${aToken}`
+        }
+      });
+      if(data.success){
+        toast.success(data.message);
+        getAllAppointments();
+      }
+      else{
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
+  }
+
+
+  const adminDashData=async()=>{
+    try {
+      const {data}=await api.get(`/api/admin/dashboard`,{
+        headers:{
+          Authorization:`Bearer ${aToken}`
+        }
+      });
+      if(data.success){
+        setDashData(data.dashData);
+        getAllAppointments();
+      }
+      else{
+        toast.error(data.success);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
+    }
+  }
+
+
   const value={
    aToken,
    setAToken,
    doctors,
    getAllDoctors,
-   changeAvailability
+   changeAvailability,
+   appointments,
+   setAppointments,
+   getAllAppointments,
+   cancelAppointment,
+   dashData,
+   setDashData,
+   adminDashData,
   };
 
   return (

@@ -1,7 +1,7 @@
 
 import express from 'express'
 import upload from '../middlewares/multer.middleware.js';
-import { addDoctor, allDoctors, loginAdmin } from '../controllers/admin.controller.js';
+import { addDoctor, adminDashboard, allDoctors, appointmentCancel, appointmentsAdmin, loginAdmin } from '../controllers/admin.controller.js';
 const adminRouter=express.Router();
 import {body} from 'express-validator';
 import { authAdmin } from '../middlewares/authAdmin.middleware.js';
@@ -42,5 +42,8 @@ adminRouter.post("/login",[
 
 adminRouter.post("/all-doctors",authAdmin,allDoctors);
 adminRouter.post("/change-availability",authAdmin,changeAvailability);
+adminRouter.get("/appointments",authAdmin,appointmentsAdmin);
+adminRouter.post("/cancel-appointment",authAdmin,appointmentCancel);
+adminRouter.get("/dashboard",authAdmin,adminDashboard);
 
 export default adminRouter;

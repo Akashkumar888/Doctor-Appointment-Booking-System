@@ -4,6 +4,7 @@ import blackListModel from '../models/blackListToken.model.js'
 import {v2 as cloudinary} from 'cloudinary'
 import doctorModel from "../models/doctor.model.js";
 import appointmentModel from "../models/appointment.model.js";
+import razorpayInstance from "../configs/razorpay.config.js";
 
 // api to register to user
 export const registerUser=async(req,res)=>{
@@ -268,4 +269,87 @@ export const cancelAppointment=async(req,res)=>{
 }
 
 
-// api to online payment
+// Exchange rate: 1 USD → 83 INR (example)
+// Exchange rate: 1 USD → 83 INR
+const USD_TO_INR = 83;
+
+// Helper function to convert amount to paise
+const convertAmountToPaise = (amount, currencySymbol) => {
+  if (currencySymbol === "$") {
+    // Convert USD → INR → paise
+    return Math.round(amount * USD_TO_INR * 100);
+  } else if (currencySymbol === "Rs") {
+    // INR → paise
+    return Math.round(amount * 100);
+  } else {
+    throw new Error("Invalid currency type received");
+  }
+};
+
+// API to create Razorpay order
+export const createOrder = async (req, res) => {
+  try {
+    const { appointmentId, currencySymbol } = req.body;
+    const appointmentData = await appointmentModel.findById(appointmentId);
+
+    if (!appointmentData || appointmentData.cancelled) {
+      return res.status(401).json({
+        success: false,
+        message: "Appointment cancelled or not found",
+      });
+    }
+
+    if (!appointmentData.amount || isNaN(appointmentData.amount)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid amount for appointment",
+      });
+    }
+
+    if (!currencySymbol) {
+      return res.status(400).json({
+        success: false,
+        message: "Currency type is required",
+      });
+    }
+
+    // Always convert to INR paise
+    const amountInPaise = convertAmountToPaise(appointmentData.amount, currencySymbol);
+
+    const options = {
+      amount: amountInPaise,
+      currency: "INR", // Razorpay UI always shows INR
+      receipt: appointmentId,
+    };
+
+    const order = await razorpayInstance.orders.create(options);
+    res.status(200).json({ success: true, order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
+// api to online payment verify order
+export const verifyOrder=async(req,res)=>{
+  try {
+    const {razorpay_order_id}=req.body;
+    const orderInfo=await razorpayInstance.orders.fetch(razorpay_order_id);
+
+    if(orderInfo.status==='paid'){
+      await appointmentModel.findByIdAndUpdate(orderInfo.receipt,{payment:true});
+      res.status(200).json({success:true,message:"Payment successful!"});
+    }
+    else{
+      res.status(200).json({success:false,message:"Payment falied!"});
+    }
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+

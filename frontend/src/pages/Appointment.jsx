@@ -125,13 +125,16 @@ const bookAppointment=async()=>{
   fetchDocInfo();
   },[docId,doctors]);
 
-  useEffect(()=>{
-  getAvailableSlots();
-  },[docInfo]);
+  useEffect(() => {
+  if (docInfo) {
+    getAvailableSlots();
+  }
+}, [docInfo]);
+
   
-  useEffect(()=>{
-  console.log(docSlots);
-  },[docSlots]);
+  // useEffect(()=>{
+  // console.log(docSlots);
+  // },[docSlots]);
 
 
   return docInfo && (
@@ -159,7 +162,7 @@ const bookAppointment=async()=>{
             <p className='text-sm text-gray-500 max-w-[700px] mt-1'>{docInfo.about}</p>
           </div>
           <p className='text-gray-500 font-medium mt-4'>
-            Appointment fee: <span className='text-gray-600'>{docInfo.fees}{currencySymbol}</span>
+            Appointment fee: <span className='text-gray-600'> {currencySymbol}{docInfo.fees}</span>
           </p>
         </div>
       </div>
@@ -198,6 +201,7 @@ const bookAppointment=async()=>{
 }
 
 export default Appointment
+
 
 // ⚛️ React Reconciliation — The Core Concept
 // 🔹 Definition

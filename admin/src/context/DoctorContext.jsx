@@ -1,5 +1,6 @@
 
 
+import { useState } from "react";
 import { createContext } from "react";
 
 // create context
@@ -9,8 +10,13 @@ const DoctorContext=createContext();
 
 export const DoctorContextProvider=({children})=>{
 
-  const value={
 
+  const [dToken,setDToken]=useState(localStorage.getItem("dToken") || "");
+
+
+  const value={
+   dToken,
+   setDToken,
   };
 
   return (

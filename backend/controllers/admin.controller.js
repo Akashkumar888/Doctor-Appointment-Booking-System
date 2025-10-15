@@ -2,6 +2,9 @@ import doctorModel from '../models/doctor.model.js'
 import {v2 as cloudinary} from 'cloudinary'
 import {validationResult} from 'express-validator'
 import jwt from 'jsonwebtoken'
+import appointmentModel from '../models/appointment.model.js'
+import userModel from '../models/user.model.js'
+
 
 // api for adding doctor 
 export const addDoctor=async(req,res)=>{
@@ -94,6 +97,67 @@ export const allDoctors=async(req,res)=>{
     const doctors=await doctorModel.find({}).select('-password');
     res.status(201).json({success:true,doctors});
 
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+
+
+// API to get all appointment for admin panel
+export const appointmentsAdmin=async(req,res)=>{
+  try {
+    const appointments=(await appointmentModel.find({})).reverse(); //all the appointments 
+    res.status(200).json({success:true,appointments});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+
+
+// API to get appointment cancelled for admin panel
+export const appointmentCancel=async(req,res)=>{
+  try {
+    const {appointmentId}=req.body;
+    const appointmentData=await appointmentModel.findById(appointmentId); // all the appointment
+
+    await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true}); // all the appointment
+    // releasing doctor slots
+    const {docId,slotDate,slotTime}=appointmentData;
+
+    const doctorData=await doctorModel.findById(docId);
+
+    let slots_booked=doctorData.slots_booked;
+
+    if(slots_booked[slotDate]) {
+    slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
+    }
+
+    await doctorModel.findByIdAndUpdate(docId,{slots_booked});
+    res.status(200).json({success:true,message:"Appointment cancelled successfully!"});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+
+// API to get dashboard data for admin panel
+
+export const adminDashboard=async(req,res)=>{
+  try {
+    const doctors=await doctorModel.find({}); // all doctors 
+    const users=await userModel.find({});
+    const appointments=await appointmentModel.find({});
+
+    const dashData={
+      doctors:doctors.length,
+      appointments:appointments.length,
+      patients:users.length,
+      latestAppointments:appointments.reverse().slice(0,5),
+    };
+
+    res.status(200).json({success:true,dashData})
   } catch (error) {
     console.log(error);
     res.status(500).json({success:false,message:error.message});
