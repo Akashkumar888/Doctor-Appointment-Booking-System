@@ -1,7 +1,7 @@
 
 import express from 'express'
 import upload from '../middlewares/multer.middleware.js';
-import { addDoctor, adminDashboard, allDoctors, appointmentCancel, appointmentsAdmin, loginAdmin } from '../controllers/admin.controller.js';
+import { addDoctor, adminDashboard, allDoctors, appointmentCancel, appointmentsAdmin, loginAdmin, logoutAdmin } from '../controllers/admin.controller.js';
 const adminRouter=express.Router();
 import {body} from 'express-validator';
 import { authAdmin } from '../middlewares/authAdmin.middleware.js';
@@ -39,6 +39,8 @@ adminRouter.post("/login",[
   body('password').isLength({min:8}).withMessage("Please enter a strong message"),
 ], 
   loginAdmin);
+
+adminRouter.post("/logout",authAdmin,logoutAdmin);
 
 adminRouter.post("/all-doctors",authAdmin,allDoctors);
 adminRouter.post("/change-availability",authAdmin,changeAvailability);

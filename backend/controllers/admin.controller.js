@@ -4,6 +4,7 @@ import {validationResult} from 'express-validator'
 import jwt from 'jsonwebtoken'
 import appointmentModel from '../models/appointment.model.js'
 import userModel from '../models/user.model.js'
+import blackListModel from '../models/blackListToken.model.js'
 
 
 // api for adding doctor 
@@ -89,6 +90,26 @@ export const loginAdmin=async(req,res)=>{
     res.status(500).json({success:false,message:error.message});
   }
 }
+
+
+// api user logout 
+export const logoutAdmin=async(req,res)=>{
+  try {
+    const authHeader=req.headers.authorization;
+    if(!authHeader || !authHeader.startsWith("Bearer ")){
+      return res.status(401).json({success:false,message:'Not authorized'}); 
+    }
+    const token=authHeader.split(" ")[1];
+    if(!token)return res.status(401).json({success:false,message:"Token Not found"});
+    await blackListModel.create({token});
+    res.json({ success: true, message: "Logged out successfully!" });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false,message:error.message});
+  }
+}
+
 
 // API to get all doctors list for admin panel
 

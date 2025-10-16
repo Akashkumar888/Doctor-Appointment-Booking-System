@@ -5,8 +5,10 @@ import AdminContext from '../context/AdminContext';
 import api from '../api/axios'
 import { toast } from 'react-toastify';
 import DoctorContext from '../context/DoctorContext';
+import {useNavigate} from 'react-router-dom'
 
 const Login = () => {
+  const navigate=useNavigate();
   const [state,setState]=useState('Admin');
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
@@ -25,6 +27,15 @@ const Login = () => {
           localStorage.setItem(`${token}`,data.token); // when we reload the webpage admin login using localStorage 
           setToken(data.token);   // ✅ update context state
           toast.success("Login successful");
+          // ✅ Wait for context update before navigation
+          setTimeout(() => {
+            if (state === "Admin") {
+              navigate("/admin-dashboard");
+            } 
+            else {
+              navigate("/doctor-dashboard");
+            }
+          })
         }  
         else{
           toast.error(data.message);

@@ -118,6 +118,7 @@ export const logoutUser=async(req,res)=>{
   }
 }
 
+
 export const updateProfile=async(req,res)=>{
   try {
     const userId = req.user._id; // ✅ comes from token authUser middleware, not body
