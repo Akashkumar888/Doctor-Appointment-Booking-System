@@ -4,23 +4,50 @@ import { assets } from '../assets/assets'
 import AdminContext from '../context/AdminContext'
 import { useNavigate } from 'react-router-dom';
 import DoctorContext from '../context/DoctorContext';
+import api from '../api/axios';
+import {toast} from 'react-toastify'
 
 const Navbar = () => {
   const {aToken,setAToken}=useContext(AdminContext);
   const {dToken,setDToken}=useContext(DoctorContext);
   const navigate=useNavigate();
 
-  const logoutHandler=()=>{
-    if(aToken){
-    setAToken("");
-    localStorage.removeItem("aToken");
+  const logoutHandler = async () => {
+  try {
+    let token, apiUrl;
+
+    if (aToken) {
+      token = aToken;
+      apiUrl = "admin";
+    } else if (dToken) {
+      token = dToken;
+      apiUrl = "doctor";
+    } else {
+      toast.error("No active session found");
+      return;
     }
-    else if(dToken){
-    setDToken("");
-    localStorage.removeItem("dToken");
+
+    await api.post(`/api/${apiUrl}/logout`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // clear local storage + state
+    if (apiUrl === "admin") {
+      localStorage.removeItem("aToken");
+      setAToken("");
+    } else {
+      localStorage.removeItem("dToken");
+      setDToken("");
     }
-  navigate('/');
+    navigate("/");
+  } catch (error) {
+    console.error("Logout error:", error);
+    toast.error(error.response?.data?.message || "Logout failed.");
   }
+};
+
+
+
   
   return (
     <div className='flex justify-between items-center px-4 sm:px-10 py-3 border-b bg-white'>

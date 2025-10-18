@@ -109,7 +109,12 @@ export const logoutUser=async(req,res)=>{
     }
     const token=authHeader.split(" ")[1];
     if(!token)return res.status(401).json({success:false,message:"Token Not found"});
-    await blackListModel.create({token});
+    // Add to blacklist if not already exists
+    await blackListModel.updateOne(
+  { token },
+  { $setOnInsert: { token, createdAt: new Date() } },
+  { upsert: true }
+);
     res.json({ success: true, message: "Logged out successfully!" });
 
   } catch (error) {

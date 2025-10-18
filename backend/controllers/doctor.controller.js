@@ -1,4 +1,5 @@
 import appointmentModel from "../models/appointment.model.js";
+import blackListModel from "../models/blackListToken.model.js";
 import doctorModel from "../models/doctor.model.js";
 import {validationResult} from 'express-validator'
 
@@ -61,7 +62,13 @@ export const logoutDoctor=async(req,res)=>{
     }
     const token=authHeader.split(" ")[1];
     if(!token)return res.status(401).json({success:false,message:"Token Not found"});
-    await blackListModel.create({token});
+    // Add to blacklist if not already exists
+    await blackListModel.updateOne(
+  { token },
+  { $setOnInsert: { token, createdAt: new Date() } },
+  { upsert: true }
+);
+
     res.json({ success: true, message: "Logged out successfully!" });
 
   } catch (error) {
@@ -157,6 +164,32 @@ export const doctorDashboard=async(req,res)=>{
 }
 
 
+// api to get doctor profile
+export const doctorProfile=async(req,res)=>{
+  try {
+    res.status(200).json({success:true,profileData:req.doctor});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// api to edit the doctor profile
+
+export const updateDoctorProfile=async(req,res)=>{
+  try {
+    const docId=req.doctor._id;// ✅ comes from token authDoctor middleware, not body
+    const {fees,address,available}=req.body;
+
+    await doctorModel.findByIdAndUpdate(docId,{
+      fees,address,available
+    });
+    res.status(200).json({success:true,message:'profile updated'});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 
 // ✅ Summary Table
 // Context	Syntax	Use {} or ()	                                  Return Behavior

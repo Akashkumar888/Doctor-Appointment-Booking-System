@@ -16,6 +16,7 @@ export const DoctorContextProvider=({children})=>{
   const [dToken,setDToken]=useState(localStorage.getItem("dToken") || "");
   const [appointments,setAppointments]=useState([]);
   const [dashData,setDashData]=useState(false);
+  const [profileData,setProfileData]=useState(false);
 
   const getAppointments=async()=>{
     try {
@@ -106,6 +107,26 @@ const doctorDashboard=async()=>{
   }
 };
 
+const getDoctorProfile=async()=>{
+  try {
+    const {data}=await api.get(`/api/doctor/profile`,{
+      headers:{
+        Authorization:`Bearer ${dToken}`
+      }
+    });
+    if(data.success){
+      toast.success(data.message);
+      setProfileData(data.profileData);
+    }
+    else{
+      toast.error(data.message);
+    }
+  } catch (error) {
+    console.log(error);
+    toast.error(error.message);
+  }
+}
+
 
 
   const value={
@@ -119,6 +140,9 @@ const doctorDashboard=async()=>{
    dashData,
    setDashData,
    doctorDashboard,
+   profileData,
+   setProfileData,
+   getDoctorProfile
   };
 
   return (

@@ -1,6 +1,6 @@
 
 import express from 'express'
-import { appointmentCancel, appointmentComplete, appointmentsDoctor, doctorDashboard, doctorList, loginDoctor, logoutDoctor } from '../controllers/doctor.controller.js';
+import { appointmentCancel, appointmentComplete, appointmentsDoctor, doctorDashboard, doctorList, doctorProfile, loginDoctor, logoutDoctor, updateDoctorProfile } from '../controllers/doctor.controller.js';
 const doctorRouter=express.Router();
 
 import {body} from 'express-validator'
@@ -18,5 +18,7 @@ doctorRouter.get('/appointments',authDoctor,appointmentsDoctor);
 doctorRouter.post('/complete-appointment',authDoctor,appointmentComplete);
 doctorRouter.post('/cancel-appointment',authDoctor,appointmentCancel);
 doctorRouter.get('/dashboard',authDoctor,doctorDashboard);
+doctorRouter.get('/profile',authDoctor,doctorProfile);
+doctorRouter.post('/update-profile',authDoctor,updateDoctorProfile);
 
 export default doctorRouter;

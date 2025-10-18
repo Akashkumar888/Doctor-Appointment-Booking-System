@@ -7,7 +7,7 @@ import { assets } from '../../assets/assets';
 import AppContext from '../../context/AppContext';
 
 const Dashboard = () => {
-  const {aToken,adminDashData,dashData,setDashData,cancelAppointment}=useContext(AdminContext);
+  const {aToken,adminDashData,dashData,cancelAppointment}=useContext(AdminContext);
 
   const {slotDateFormat}=useContext(AppContext);
 
@@ -64,13 +64,15 @@ const Dashboard = () => {
               <p className='text-gray-800 font-medium'>{slotDateFormat(item.slotDate)}</p>
             </div>
             {item.cancelled ? <p className='text-red-400 text-xs font-medium'>Cancelled</p> : 
-            <img onClick={()=>cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
-            }
+                        item.isComplete ? <p className='text-green-500 text-xs font-medium'>Completed</p> :
+                        <img onClick={()=>cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
+                        }
             </div>
           )) 
         }
         </div>
       </div>
+      
     </div>
   )
 }
