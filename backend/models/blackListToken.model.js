@@ -1,15 +1,12 @@
-
 import mongoose from "mongoose";
-// using ttl-> time to live 
 
-const blackListSchema = new mongoose.Schema({
-  token: { type: String, required: true }, // ❌ removed unique
-  createdAt: { type: Date, default: Date.now, expires: 30 * 86400 } // auto-delete after 30 days
+const blackListTokenSchema = new mongoose.Schema({
+  token: { type: String, required: true },
+  expiresAt: { type: Date, required: true }
 });
 
-// Add an index to speed up TTL cleanup
-blackListSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 86400 });
+// Automatically delete expired tokens after their expiration
+blackListTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-const blackListModel = mongoose.models.BlackList || mongoose.model("BlackList", blackListSchema);
-
+const blackListModel = mongoose.models.BlackListToken || mongoose.model("BlackListToken", blackListTokenSchema);
 export default blackListModel;

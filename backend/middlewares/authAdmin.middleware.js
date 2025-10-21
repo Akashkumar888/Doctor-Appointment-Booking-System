@@ -4,6 +4,7 @@ import blackListModel from '../models/blackListToken.model.js';
 
 
 // admin authentication middleware 
+
 export const authAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -18,15 +19,14 @@ export const authAdmin = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (!decoded || decoded.role !== "admin" || decoded.email !== process.env.ADMIN_EMAIL) {
-      return res.status(401).json({ success: false, message: "Token is Invalid" });
+    if (!decoded || decoded.role !== "admin") {
+      return res.status(401).json({ success: false, message: "Invalid admin token" });
     }
 
-    req.admin = decoded; // attach decoded data to request
+    req.admin = decoded;
     next();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Admin auth error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

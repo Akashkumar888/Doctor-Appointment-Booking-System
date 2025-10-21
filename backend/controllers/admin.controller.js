@@ -146,11 +146,7 @@ export const logoutAdmin = async (req, res) => {
         .status(401)
         .json({ success: false, message: "Token Not found" });
     // Add to blacklist if not already exists
-    await blackListModel.updateOne(
-  { token },
-  { $setOnInsert: { token, createdAt: new Date() } },
-  { upsert: true }
-);
+    await blackListModel.create({ token, expiresAt: new Date(Date.now() + 30*24*60*60*1000) });
 
     res.json({ success: true, message: "Logged out successfully!" });
   } catch (error) {
