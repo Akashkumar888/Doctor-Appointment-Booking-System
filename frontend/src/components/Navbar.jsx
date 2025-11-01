@@ -18,24 +18,16 @@ const Navbar = () => {
   const {token, setToken,userData,setUserData} = useContext(AppContext);
 
   // ✅ Proper logout handler
-  const logoutHandler = async () => {
-    try {
-      // call backend API to blacklist token
-      await api.post('/api/user/logout', {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  const logoutHandler = () => {
+  
+  localStorage.removeItem("token");
+  setToken("");
+  setUserData(null);
 
-      // remove token locally after successful logout
-      setToken('');
-      localStorage.removeItem('token');
-      navigate('/login', { state: { fromLogout: true } });
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || 'Logout failed');
-    }
-  };
+  toast.success("Logged out successfully");
+  navigate("/login", { state: { fromLogout: true } });
+};
+
 
 
   return (

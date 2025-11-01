@@ -12,39 +12,22 @@ const Navbar = () => {
   const {dToken,setDToken}=useContext(DoctorContext);
   const navigate=useNavigate();
 
-  const logoutHandler = async () => {
-  try {
-    let token, apiUrl;
-
-    if (aToken) {
-      token = aToken;
-      apiUrl = "admin";
-    } else if (dToken) {
-      token = dToken;
-      apiUrl = "doctor";
-    } else {
-      toast.error("No active session found");
-      return;
-    }
-
-    await api.post(`/api/${apiUrl}/logout`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    // clear local storage + state
-    if (apiUrl === "admin") {
-      localStorage.removeItem("aToken");
-      setAToken("");
-    } else {
-      localStorage.removeItem("dToken");
-      setDToken("");
-    }
-    navigate("/");
-  } catch (error) {
-    console.error("Logout error:", error);
-    toast.error(error.response?.data?.message || "Logout failed.");
+  const logoutHandler = () => {
+  
+  if (aToken) {
+    localStorage.removeItem("aToken");
+    setAToken("");
   }
+
+  if (dToken) {
+    localStorage.removeItem("dToken");
+    setDToken("");
+  }
+
+  toast.success("Logged out successfully");
+  navigate("/");
 };
+
 
 
 
