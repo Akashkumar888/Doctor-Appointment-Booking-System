@@ -27,16 +27,12 @@ const Login = () => {
     : { email, password };       // login doesn’t need name
 
     try {
-      const {data}=await api.post(`/api/user/${url}`,payload,{
-        headers:{
-          Authorization:`Bearer ${token}`,
-          'Content-Type': 'application/json',  // always good to include this
-        }
-      });
+      const {data}=await api.post(`/api/user/${url}`,payload);
       if(data.success){
         localStorage.setItem("token",data.token);
-        setToken(data.token);  // ✅ use data.token, not the old token variable
+        setToken(data.token); // ✅ use data.token, not the old token variable
         toast.success(data.message);
+        navigate("/");  // 🔥 add this
       }
       else{
         toast.error(data.message);
@@ -47,11 +43,11 @@ const Login = () => {
     }
   }
 
-  useEffect(()=>{
-   if(token){
-    navigate('/');
-   }
-  },[token])
+  useEffect(() => {
+  if (token) navigate("/");
+}, [token]);
+
+
 
   return (
     <form onSubmit={onSubmitHandler} className='min-h-[80vh] flex items-center '>

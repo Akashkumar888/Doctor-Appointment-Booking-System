@@ -91,12 +91,6 @@ doctorSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Generate JWT token (instance method)
-doctorSchema.methods.generateAuthToken = function () {
-  return jwt.sign({ _id: this._id }, process.env.JWT_SECRET, {
-    expiresIn: "30d", // expiry is best practice
-  });
-};
 
 const doctorModel=mongoose.models.Doctor || mongoose.model('Doctor',doctorSchema);
 

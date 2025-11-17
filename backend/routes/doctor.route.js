@@ -1,6 +1,6 @@
 
 import express from 'express'
-import { appointmentCancel, appointmentComplete, appointmentsDoctor, doctorDashboard, doctorList, doctorProfile, loginDoctor, logoutDoctor, updateDoctorProfile } from '../controllers/doctor.controller.js';
+import { appointmentCancel, appointmentComplete, appointmentsDoctor, doctorDashboard, doctorList, doctorProfile, loginDoctor, updateDoctorProfile } from '../controllers/doctor.controller.js';
 const doctorRouter=express.Router();
 
 import {body} from 'express-validator'
@@ -12,7 +12,6 @@ doctorRouter.post('/login',[
     body('password').isLength({min:8}).withMessage('Invalid password'),
   ],loginDoctor);
 
-doctorRouter.post("/logout",authDoctor,logoutDoctor);
 
 doctorRouter.get('/appointments',authDoctor,appointmentsDoctor);
 doctorRouter.post('/complete-appointment',authDoctor,appointmentComplete);

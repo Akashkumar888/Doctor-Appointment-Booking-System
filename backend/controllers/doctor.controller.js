@@ -1,240 +1,190 @@
 import appointmentModel from "../models/appointment.model.js";
-import blackListModel from "../models/blackListToken.model.js";
 import doctorModel from "../models/doctor.model.js";
-import {validationResult} from 'express-validator'
+import { validationResult } from "express-validator";
+import { generateDoctorToken } from "../utils/generateDoctorToken.util.js";
 
-
-export const changeAvailability=async(req,res)=>{
+// ================= CHANGE AVAILABILITY ==================
+export const changeAvailability = async (req, res) => {
   try {
-    const {docId}=req.body;
-    const docData=await doctorModel.findById(docId);
-    await doctorModel.findByIdAndUpdate(docId,{available: !docData.available});
-    res.status(201).json({success:true,message:'Availability Changed'});
+    const { docId } = req.body;
+    const doctor = await doctorModel.findById(docId);
+
+    await doctorModel.findByIdAndUpdate(docId, {
+      available: !doctor.available,
+    });
+
+    res.json({ success: true, message: "Availability updated" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({success:false,message:error.message});
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
-export const doctorList=async(req,res)=>{
+// ================= GET DOCTOR LIST ==================
+export const doctorList = async (req, res) => {
   try {
-    const doctors=await doctorModel.find({}).select(['-password','-email']);
-    res.status(201).json({success:true,doctors});
+    const doctors = await doctorModel
+      .find({})
+      .select(["-password", "-email"]);
+
+    res.json({ success: true, doctors });
   } catch (error) {
     console.log(error);
-    res.status(500).json({success:false,message:error.message});
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
-
-// api for doctor login
-export const loginDoctor=async(req,res)=>{
+// ================= LOGIN DOCTOR (FIXED TOKEN) ==================
+export const loginDoctor = async (req, res) => {
   try {
-    const errors=validationResult(req);
-    if(!errors.isEmpty()){
-      return res.status(401).json({success:false,message:errors.array().map(err=>err.msg)});
-    }
-    const {email,password}=req.body;
-    const doctor = await doctorModel.findOne({ email }).select('+password');
-    if(!doctor){
-      return res.status(401).json({success:false,message:'Invalid credentials'});
-    }
-    const isMatch=await doctor.comparePassword(password);
-    if(!isMatch){
-      return res.status(401).json({success:false,message:'Password incorrect'});
-    }
-    const token=doctor.generateAuthToken();
-    const safeDoctor=doctor.toObject();
-    delete safeDoctor.password;
-    res.status(200).json({success:true,message:'Login successfully!',token});
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({
+        success: false,
+        message: errors.array().map((e) => e.msg),
+      });
+
+    const { email, password } = req.body;
+
+    const doctor = await doctorModel.findOne({ email }).select("+password");
+    if (!doctor)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+
+    const isMatch = await doctor.comparePassword(password);
+    if (!isMatch)
+      return res
+        .status(401)
+        .json({ success: false, message: "Incorrect password" });
+
+    // 🟢 CORRECT — GENERATE DOCTOR JWT TOKEN
+    const token = generateDoctorToken(doctor);
+
+    res.json({
+      success: true,
+      message: "Login successful!",
+      token,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({success:false,message:error.message});
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
-// api user logout 
-export const logoutDoctor=async(req,res)=>{
+// ================= DOCTOR APPOINTMENTS ==================
+export const appointmentsDoctor = async (req, res) => {
   try {
-    const authHeader=req.headers.authorization;
-    if(!authHeader || !authHeader.startsWith("Bearer ")){
-      return res.status(401).json({success:false,message:'Not authorized'}); 
-    }
-    const token=authHeader.split(" ")[1];
-    if(!token)return res.status(401).json({success:false,message:"Token Not found"});
-    // Add to blacklist if not already exists
-    await blackListModel.updateOne(
-  { token },
-  { $setOnInsert: { token, createdAt: new Date() } },
-  { upsert: true }
-);
+    const doctorId = req.doctor._id;
 
-    res.json({ success: true, message: "Logged out successfully!" });
+    const appointments = (
+      await appointmentModel.find({ docId: doctorId })
+    ).reverse();
 
+    res.json({ success: true, appointments });
   } catch (error) {
     console.log(error);
-    res.status(500).json({success:false,message:error.message});
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
-
-// api to get doctor appointments for doctor panel
-export const appointmentsDoctor=async(req,res)=>{
-  try {
-    const docId=req.doctor._id;// ✅ comes from token authDoctor middleware, not body
-    const appointments=(await appointmentModel.find({docId})).reverse(); // for latest appointments 
-    res.status(200).json({success:true,appointments});
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({success:false,message:error.message});
-  }
-}
-
-// api to mark appointment completed for doctor panel
+// ================= MARK COMPLETED ==================
 export const appointmentComplete = async (req, res) => {
   try {
-    const docId=req.doctor._id;// ✅ comes from token authDoctor middleware, not body
+    const doctorId = req.doctor._id;
     const { appointmentId } = req.body;
 
-    const appointmentData = await appointmentModel.findById(appointmentId);
-    if (appointmentData && appointmentData.docId.toString() === docId.toString()) {
-      await appointmentModel.findByIdAndUpdate(appointmentId, { isCompleted: true });
-      res.status(200).json({ success: true, message: "Appointment Completed" });
-    } else {
-      res.status(401).json({ success: false, message: "Mark Failed" });
-    }
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment || appointment.docId.toString() !== doctorId.toString())
+      return res.json({ success: false, message: "Not allowed" });
+
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      isCompleted: true,
+    });
+
+    res.json({ success: true, message: "Appointment completed" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// api to cancel appointment for doctor panel
+// ================= CANCEL APPOINTMENT ==================
 export const appointmentCancel = async (req, res) => {
   try {
-    const docId=req.doctor._id;// ✅ comes from token authDoctor middleware, not body
+    const doctorId = req.doctor._id;
     const { appointmentId } = req.body;
 
-    const appointmentData = await appointmentModel.findById(appointmentId);
-    if (appointmentData && appointmentData.docId.toString() === docId.toString()) {
-      await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
-      res.status(200).json({ success: true, message: "Appointment Cancelled" });
-    } else {
-      res.status(401).json({ success: false, message: "Cancellation Failed" });
-    }
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment || appointment.docId.toString() !== doctorId.toString())
+      return res.json({ success: false, message: "Not allowed" });
+
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      cancelled: true,
+    });
+
+    res.json({ success: true, message: "Appointment cancelled" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-// api to get dashboard data for doctor panel
-export const doctorDashboard=async(req,res)=>{
+// ================= DOCTOR DASHBOARD ==================
+export const doctorDashboard = async (req, res) => {
   try {
-    const docId=req.doctor._id;// ✅ comes from token authDoctor middleware, not body
-    const appointments=await appointmentModel.find({docId});
-    let earnings=0;
+    const doctorId = req.doctor._id;
 
-    appointments.map((item,)=>{
-      if(item.isCompleted || item.payment){
-        earnings+=item.amount;
-      }
+    const appointments = await appointmentModel.find({ docId: doctorId });
+
+    let earnings = 0;
+    let patients = new Set();
+
+    appointments.forEach((a) => {
+      if (a.payment || a.isCompleted) earnings += a.amount;
+      patients.add(a.userId.toString());
     });
 
-    let patients=[];
-
-    appointments.map((item)=>{
-     if(!patients.includes(item.userId)){
-      patients.push(item.userId);
-     }
+    res.json({
+      success: true,
+      dashData: {
+        earnings,
+        patients: patients.size,
+        appointments: appointments.length,
+        latestAppointments: appointments.reverse().slice(0, 5),
+      },
     });
-    const dashData={
-      earnings,
-      appointments:appointments.length,
-      patients:patients.length,
-      latestAppointments:appointments.reverse().slice(0,5)
-    };
-    res.status(200).json({success:true,dashData});
-
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
+// ================= DOCTOR PROFILE ==================
+export const doctorProfile = async (req, res) => {
+  res.json({
+    success: true,
+    profileData: req.doctor,
+  });
+};
 
-// api to get doctor profile
-export const doctorProfile=async(req,res)=>{
+// ================= UPDATE PROFILE ==================
+export const updateDoctorProfile = async (req, res) => {
   try {
-    res.status(200).json({success:true,profileData:req.doctor});
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-}
+    const doctorId = req.doctor._id;
+    const { fees, address, available } = req.body;
 
-// api to edit the doctor profile
-
-export const updateDoctorProfile=async(req,res)=>{
-  try {
-    const docId=req.doctor._id;// ✅ comes from token authDoctor middleware, not body
-    const {fees,address,available}=req.body;
-
-    await doctorModel.findByIdAndUpdate(docId,{
-      fees,address,available
+    await doctorModel.findByIdAndUpdate(doctorId, {
+      fees,
+      address,
+      available,
     });
-    res.status(200).json({success:true,message:'profile updated'});
+
+    res.json({ success: true, message: "Profile updated" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
-}
-
-// ✅ Summary Table
-// Context	Syntax	Use {} or ()	                                  Return Behavior
-// Backend (JS logic)	         .map((item) => { ... })	{}	       Must use return explicitly
-// Frontend (React JSX)	       .map((item) => ( ... ))	()	               Implicit return of JSX
-// Frontend (React JSX, complex logic)	.map((item) => { ... return (...) })	{}	Explicit return needed
-
-
-// 🧠 What “Return” Means
-// Every function in JavaScript can return a value.
-// Example:
-// function add(a, b) {
-//   return a + b;
-// }
-
-// Here, return explicitly tells the function what value to give back.
-// ✅ 1️⃣ Explicit Return (You Write return)
-// You use curly braces {}, which means you have a function body.
-// So you must explicitly say what to return.
-// // Explicit return example
-// const result = [1, 2, 3].map((num) => {
-//   return num * 2;  // 👈 explicitly written
-// });
-// console.log(result); // [2, 4, 6]
-
-// If you forget return when using {}, you’ll get [undefined, undefined, undefined].
-// ✅ 2️⃣ Implicit Return (No return Keyword)
-// You use parentheses () instead of {}.
-// That means the function will automatically (implicitly) return whatever is inside the parentheses.
-
-// // Implicit return example
-// const result = [1, 2, 3].map((num) => (
-//   num * 2  // 👈 automatically returned
-// ));
-// console.log(result); // [2, 4, 6]
-// No need to write return — JS does it for you automatically.
-// 💻 In React JSX
-// ✅ Implicit return (short, clean JSX):
-
-// {items.map((item) => (
-//   <p>{item}</p>
-// ))}
-
-// ✅ Explicit return (when you add logic before returning JSX):
-// {items.map((item) => {
-//   if (!item) return null;
-//   return <p>{item}</p>;
-// })}
+};

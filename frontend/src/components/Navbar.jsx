@@ -5,15 +5,12 @@ import {NavLink, useLocation, useNavigate} from 'react-router-dom'
 import { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import { toast } from 'react-toastify';
-import api from '../api/axios';
 
 const Navbar = () => {
 
   const navigate=useNavigate();
   const location = useLocation();
-  // 👇 decide whether to show login or signup form
-  const [state, setState] = useState(location.state?.fromLogout ? 'Login' : 'Sign up');
-
+  
   const [showMenu, setShowMenu] = useState(false);
   const {token, setToken,userData,setUserData} = useContext(AppContext);
 

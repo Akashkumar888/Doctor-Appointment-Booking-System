@@ -1,24 +1,19 @@
 import doctorModel from "../models/doctor.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import { validationResult } from "express-validator";
-import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointment.model.js";
 import userModel from "../models/user.model.js";
-import blackListModel from "../models/blackListToken.model.js";
+import { generateAdminToken } from "../utils/generateAdminToken.util.js";
 
-// api for adding doctor
+// ================= ADD DOCTOR ==================
 export const addDoctor = async (req, res) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      // empty nhi hai mtlb error hai
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: errors.array().map((err) => err.msg),
-        });
-    }
+    if (!errors.isEmpty())
+      return res.status(400).json({
+        success: false,
+        message: errors.array().map((e) => e.msg),
+      });
 
     const {
       name,
@@ -32,9 +27,6 @@ export const addDoctor = async (req, res) => {
       address,
     } = req.body;
 
-    const imageFile = req.file;
-
-    // checking for all data to add doctor
     if (
       !name ||
       !email ||
@@ -46,27 +38,21 @@ export const addDoctor = async (req, res) => {
       !fees ||
       !address
     ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "All fields are required." });
+      return res.json({
+        success: false,
+        message: "All fields are required",
+      });
     }
 
-    // check if doctor exists
-    const isAlreadyDoctorExist = await doctorModel.findOne({ email });
-    if (isAlreadyDoctorExist) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Doctor already exists" });
-    }
+    const exists = await doctorModel.findOne({ email });
+    if (exists)
+      return res.json({
+        success: false,
+        message: "Doctor already exists",
+      });
 
-    // upload image to cloudinary
-    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-      resource_type: "image",
-    });
-    const imageUrl = imageUpload.secure_url;
+    const upload = await cloudinary.uploader.upload(req.file.path);
 
-    // just pass raw password, Mongoose will hash automatically:
-    // create user (password gets hashed automatically by pre('save'))
     const doctorData = {
       name,
       email,
@@ -77,157 +63,119 @@ export const addDoctor = async (req, res) => {
       about,
       fees,
       address: JSON.parse(address),
-      image: imageUrl,
+      image: upload.secure_url,
       date: Date.now(),
     };
 
-    const newDoctor = await doctorModel.create(doctorData);
+    await doctorModel.create(doctorData);
 
-    res
-      .status(201)
-      .json({ success: true, message: "Doctor added successfully" });
+    res.json({ success: true, message: "Doctor added successfully" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// api for the admin login
-
+// ================= LOGIN ADMIN (FIXED TOKEN) ==================
 export const loginAdmin = async (req, res) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      // empty nhi hai mtlb error hai
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: errors.array().map((err) => err.msg),
-        });
-    }
+
+    if (!errors.isEmpty())
+      return res.status(400).json({
+        success: false,
+        message: errors.array().map((e) => e.msg),
+      });
+
     const { email, password } = req.body;
-    if (email !== process.env.ADMIN_EMAIL) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid credentials" });
-    }
-    if (password !== process.env.ADMIN_PASSWORD) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid credentials" });
-    }
 
-    const token = jwt.sign({ email, role: "admin" }, process.env.JWT_SECRET, {
-      expiresIn: "30d",
+    if (email !== process.env.ADMIN_EMAIL || password !== process.env.ADMIN_PASSWORD)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
+
+    // 🟢 CORRECT ROLE-BASED TOKEN
+    const token = generateAdminToken({ email });
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      token,
     });
-
-    res
-      .status(201)
-      .json({ success: true, message: "Login successfully", token });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// api user logout
-export const logoutAdmin = async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authorized" });
-    }
-    const token = authHeader.split(" ")[1];
-    if (!token)
-      return res
-        .status(401)
-        .json({ success: false, message: "Token Not found" });
-    // Add to blacklist if not already exists
-    await blackListModel.create({ token, expiresAt: new Date(Date.now() + 30*24*60*60*1000) });
-
-    res.json({ success: true, message: "Logged out successfully!" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// API to get all doctors list for admin panel
-
+// ================= GET ALL DOCTORS ==================
 export const allDoctors = async (req, res) => {
   try {
     const doctors = await doctorModel.find({}).select("-password");
-    res.status(201).json({ success: true, doctors });
+    res.json({ success: true, doctors });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// API to get all appointment for admin panel
+// ================= GET ALL APPOINTMENTS ==================
 export const appointmentsAdmin = async (req, res) => {
   try {
-    const appointments = (await appointmentModel.find({})).reverse(); //all the appointments
-    res.status(200).json({ success: true, appointments });
+    const appointments = (await appointmentModel.find({})).reverse();
+    res.json({ success: true, appointments });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// API to get appointment cancelled for admin panel
+// ================= CANCEL APPOINTMENT ==================
 export const appointmentCancel = async (req, res) => {
   try {
     const { appointmentId } = req.body;
-    const appointmentData = await appointmentModel.findById(appointmentId); // all the appointment
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment)
+      return res.json({ success: false, message: "Appointment not found" });
 
     await appointmentModel.findByIdAndUpdate(appointmentId, {
       cancelled: true,
-    }); // all the appointment
-    // releasing doctor slots
-    const { docId, slotDate, slotTime } = appointmentData;
+    });
 
-    const doctorData = await doctorModel.findById(docId);
+    const { docId, slotDate, slotTime } = appointment;
+    const doctor = await doctorModel.findById(docId);
 
-    let slots_booked = doctorData.slots_booked;
+    doctor.slots_booked[slotDate] = doctor.slots_booked[slotDate].filter(
+      (s) => s !== slotTime
+    );
 
-    if (slots_booked[slotDate]) {
-      slots_booked[slotDate] = slots_booked[slotDate].filter(
-        (e) => e !== slotTime
-      );
-    }
+    await doctor.save();
 
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
-    res
-      .status(200)
-      .json({ success: true, message: "Appointment cancelled successfully!" });
+    res.json({
+      success: true,
+      message: "Appointment cancelled successfully!",
+    });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// API to get dashboard data for admin panel
-
+// ================= ADMIN DASHBOARD ==================
 export const adminDashboard = async (req, res) => {
   try {
-    const doctors = await doctorModel.find({}); // all doctors
+    const doctors = await doctorModel.find({});
     const users = await userModel.find({});
     const appointments = await appointmentModel.find({});
 
-    const dashData = {
-      doctors: doctors.length,
-      appointments: appointments.length,
-      patients: users.length,
-      latestAppointments: appointments.reverse().slice(0, 5),
-    };
-
-    res.status(200).json({ success: true, dashData });
+    res.json({
+      success: true,
+      dashData: {
+        doctors: doctors.length,
+        patients: users.length,
+        appointments: appointments.length,
+        latestAppointments: appointments.reverse().slice(0, 5),
+      },
+    });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

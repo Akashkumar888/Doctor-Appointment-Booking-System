@@ -6,7 +6,7 @@ import api from "../api/axios";
 import {assets} from '../assets/assets'
 
 const MyProfile = () => {
-  const {userData, setUserData,token,loadUserProfileData} = useContext(AppContext);
+  const {userData, setUserData,loadUserProfileData} = useContext(AppContext);
 
   const [isEdit, setIsEdit] = useState(false);
   const [image, setImage] = useState(false);
@@ -26,11 +26,7 @@ const MyProfile = () => {
       formData.append("image",image);
     }
 
-    const { data } = await api.put("/api/user/update-profile", formData, {
-      headers: {
-         Authorization: `Bearer ${token}` 
-        },
-    });
+    const { data } = await api.put("/api/user/update-profile", formData);
 
     if (data.success) {
       toast.success(data.message);

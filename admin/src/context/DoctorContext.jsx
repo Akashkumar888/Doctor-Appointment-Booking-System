@@ -13,18 +13,14 @@ const DoctorContext=createContext();
 export const DoctorContextProvider=({children})=>{
 
 
-  const [dToken,setDToken]=useState(localStorage.getItem("dToken") || "");
+  const [dToken,setDToken]=useState(()=> localStorage.getItem("dToken") || "");
   const [appointments,setAppointments]=useState([]);
   const [dashData,setDashData]=useState(false);
   const [profileData,setProfileData]=useState(false);
 
   const getAppointments=async()=>{
     try {
-      const {data}=await api.get(`/api/doctor/appointments`,{
-        headers:{
-          Authorization:`Bearer ${dToken}`
-        }
-      });
+      const {data}=await api.get(`/api/doctor/appointments`);
       if(data.success){
         setAppointments(data.appointments);
       }
@@ -42,12 +38,6 @@ export const DoctorContextProvider=({children})=>{
     const { data } = await api.post(
       "/api/doctor/complete-appointment",
       { appointmentId }, // ✅ send JSON object, not raw value
-      {
-        headers: {
-          Authorization: `Bearer ${dToken}`,
-          "Content-Type": "application/json",
-        },
-      }
     );
 
     if (data.success) {
@@ -67,13 +57,7 @@ const appointmentCancel = async (appointmentId) => {
     const { data } = await api.post(
       "/api/doctor/cancel-appointment",
       { appointmentId }, // ✅ same here
-      {
-        headers: {
-          Authorization: `Bearer ${dToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+      );
 
     if (data.success) {
       toast.success(data.message);
@@ -90,11 +74,7 @@ const appointmentCancel = async (appointmentId) => {
 
 const doctorDashboard=async()=>{
   try {
-    const {data}=await api.get(`/api/doctor/dashboard`,{
-      headers:{
-        Authorization:`Bearer ${dToken}`
-      }
-    });
+    const {data}=await api.get(`/api/doctor/dashboard`);
     if(data.success){
      setDashData(data.dashData);
     }
@@ -107,13 +87,10 @@ const doctorDashboard=async()=>{
   }
 };
 
+
 const getDoctorProfile=async()=>{
   try {
-    const {data}=await api.get(`/api/doctor/profile`,{
-      headers:{
-        Authorization:`Bearer ${dToken}`
-      }
-    });
+    const {data}=await api.get(`/api/doctor/profile`);
     if(data.success){
       toast.success(data.message);
       setProfileData(data.profileData);

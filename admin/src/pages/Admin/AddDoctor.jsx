@@ -54,11 +54,7 @@ const AddDoctor = () => {
         console.log(`${key} : ${value}`)
       });
 
-      const {data}=await api.post(`/api/admin/add-doctor`,formData,{
-        headers:{
-          Authorization:`Bearer ${aToken}`
-        }
-      });
+      const {data}=await api.post(`/api/admin/add-doctor`,formData);
       if(data.success){
         toast.success(data.message);
         

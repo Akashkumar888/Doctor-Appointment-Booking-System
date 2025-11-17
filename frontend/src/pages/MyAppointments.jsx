@@ -21,11 +21,7 @@ const MyAppointments = () => {
 
   const getUserAppointment=async()=>{
     try {
-      const {data}=await api.get(`/api/user/appointments`,{
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      });
+      const {data}=await api.get(`/api/user/appointments`);
       if(data.success){
         setAppointments(data.appointments.reverse());
       }
@@ -37,11 +33,7 @@ const MyAppointments = () => {
 
 const cancelAppointment=async(appointmentId)=>{
   try {
-    const {data}=await api.post(`/api/user/cancel-appointment`,{appointmentId},{
-      headers:{
-        Authorization:`Bearer ${token}`
-      }
-    });
+    const {data}=await api.post(`/api/user/cancel-appointment`,{appointmentId});
     if(data.success){
       toast.success(data.message);
       getUserAppointment();
@@ -58,11 +50,7 @@ const cancelAppointment=async(appointmentId)=>{
 
 const appointmentRazorpay=async(appointmentId)=>{
   try {
-    const {data}=await api.post(`/api/user/create-order`,{appointmentId,currencySymbol},{
-      headers:{
-        Authorization:`Bearer ${token}`
-      }
-    });
+    const {data}=await api.post(`/api/user/create-order`,{appointmentId,currencySymbol});
     if(data.success){
       initializeOrder(data.order);
     }
@@ -87,11 +75,7 @@ const initializeOrder=(order)=>{
     receipt:order.receipt,
     handler:async(response)=>{
       try {
-        const {data}=await api.post(`/api/user/verify-order`,response,{
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
-        });
+        const {data}=await api.post(`/api/user/verify-order`,response);
         if(data.success){
         getUserAppointment();
         navigate("/my-appointments");

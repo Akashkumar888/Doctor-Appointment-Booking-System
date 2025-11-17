@@ -18,11 +18,7 @@ export const AdminContextProvider=({children})=>{
 
   const getAllDoctors=async()=>{
        try {
-        const {data}=await api.post(`/api/admin/all-doctors`,{},{
-          headers:{
-            Authorization:`Bearer ${aToken}`
-          }
-        });
+        const {data}=await api.post(`/api/admin/all-doctors`,{});
         if(data.success){
           setDoctors(data.doctors);
           console.log(data.doctors);
@@ -37,11 +33,7 @@ export const AdminContextProvider=({children})=>{
 
   const changeAvailability=async(docId)=>{
     try {
-      const {data}=await api.post(`/api/admin/change-availability`,{docId},{
-      headers:{
-        Authorization:`Bearer ${aToken}`
-      }
-    });
+      const {data}=await api.post(`/api/admin/change-availability`,{docId});
     if(data.success){
      toast.success(data.message);
      getAllDoctors(); 
@@ -57,11 +49,7 @@ export const AdminContextProvider=({children})=>{
 
   const getAllAppointments=async()=>{
     try {
-      const {data}=await api.get(`/api/admin/appointments`,{
-        headers:{
-          Authorization:`Bearer ${aToken}`
-        }
-      });
+      const {data}=await api.get(`/api/admin/appointments`);
       if(data.success){
        setAppointments(data.appointments);
       }
@@ -76,11 +64,7 @@ export const AdminContextProvider=({children})=>{
 
   const cancelAppointment=async(appointmentId)=>{
     try {
-      const {data}=await api.post(`/api/admin/cancel-appointment`,{appointmentId},{
-        headers:{
-          Authorization:`Bearer ${aToken}`
-        }
-      });
+      const {data}=await api.post(`/api/admin/cancel-appointment`,{appointmentId});
       if(data.success){
         toast.success(data.message);
         getAllAppointments();
@@ -97,11 +81,7 @@ export const AdminContextProvider=({children})=>{
 
   const adminDashData=async()=>{
     try {
-      const {data}=await api.get(`/api/admin/dashboard`,{
-        headers:{
-          Authorization:`Bearer ${aToken}`
-        }
-      });
+      const {data}=await api.get(`/api/admin/dashboard`);
       if(data.success){
         setDashData(data.dashData);
         getAllAppointments();

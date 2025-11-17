@@ -21,13 +21,7 @@ const DoctorProfile = () => {
 
       const { data } = await api.post(
         `/api/doctor/update-profile`,
-        updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${dToken}`,
-          },
-        }
-      );
+        updateData);
       if (data.success) {
         toast.success(data.message);
         setIsEdit(false);

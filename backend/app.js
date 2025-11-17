@@ -9,10 +9,19 @@ import doctorRouter from './routes/doctor.route.js';
 // app config
 const app=express();
 
+// ✅ Step 1: Add simple working CORS
+app.use(cors({ // ✅ Correct CORS
+  origin: [
+    process.env.FRONTEND_URL,   
+    process.env.ADMIN_URL       
+  ],
+  credentials: true, // allows cookies and Authorization headers
+})); // it allow to connect frontend to backend
+
 // middleware 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-app.use(cors()); // it allow to connect frontend to backend
+ 
 
 // database connection
 connectDB();

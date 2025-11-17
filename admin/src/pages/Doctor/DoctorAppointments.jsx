@@ -3,8 +3,7 @@ import React, { useContext, useEffect } from 'react'
 import DoctorContext from '../../context/DoctorContext'
 import AppContext from '../../context/AppContext';
 import { assets } from '../../assets/assets';
-import api from '../../api/axios';
-import { toast } from 'react-toastify';
+
 
 const DoctorAppointments = () => {
   const {dToken,appointments,getAppointments,appointmentComplete,appointmentCancel}=useContext(DoctorContext);

@@ -1,29 +1,60 @@
-import  jwt  from "jsonwebtoken";
-import blackListModel from "../models/blackListToken.model.js";
+import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
 
-
-export const authUser=async(req,res,next)=>{
+export const authUser = async (req, res, next) => {
   try {
-    const authHeader=req.headers.authorization;
-    if(!authHeader || !authHeader.startsWith("Bearer")){
-      return res.status(401).json({success:false,message:'Not Authorized.'});
+    // 1️⃣ Extract token (Cookie or Bearer Header)
+    const token =
+      req.cookies?.accessToken ||
+      (req.headers.authorization?.startsWith("Bearer ")
+        ? req.headers.authorization.split(" ")[1]
+        : null);
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication token missing",
+      });
     }
-    const token=authHeader.split(" ")[1];
-    const isBlackListToken=await blackListModel.findOne({token});
-    if(isBlackListToken){
-      return res.status(400).json({success:false,message:'Token expired/blacklisted'})
+
+    // 2️⃣ Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
     }
-    const decoded=jwt.verify(token,process.env.JWT_SECRET);
-    const userId=decoded._id || decoded.id;
-    const user=await userModel.findById(userId);
-    if(!user){
-      return res.status(401).json({success:false,message:'User Not found.'});
+
+    // 3️⃣ Get User ID
+    const userId = decoded._id || decoded.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Token missing user id",
+      });
     }
-    req.user=user; // attach user
+
+    // 4️⃣ Fetch user (password removed)
+    const user = await userModel.findById(userId).select("-password");
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 5️⃣ Attach user to req
+    req.user = user;
+
     next();
   } catch (error) {
-    console.log(error);
-    res.status(500).json({success:false,message:error.message});
+    console.error("AUTH MIDDLEWARE ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
   }
-}
+};

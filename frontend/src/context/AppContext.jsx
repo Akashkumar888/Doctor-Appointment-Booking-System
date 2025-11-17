@@ -8,8 +8,8 @@ const AppContextProvider=({children})=>{ // direct destructuring using {}
 
   const currencySymbol="$";
   const [doctors, setDoctors] = useState([]);
-  const [userData, setUserData] = useState(false);
-  const [token,setToken]=useState(localStorage.getItem("token") || "");
+  const [userData, setUserData] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem("token") || "");
 
   const getDoctorsData=async()=>{
     try {
@@ -28,11 +28,7 @@ const AppContextProvider=({children})=>{ // direct destructuring using {}
 
   const loadUserProfileData=async()=>{
     try {
-      const {data}=await api.get(`/api/user/get-profile`,{
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      });
+      const {data}=await api.get(`/api/user/get-profile`);
       if(data.success){
       setUserData(data.user);
       }
@@ -55,7 +51,7 @@ const AppContextProvider=({children})=>{ // direct destructuring using {}
   loadUserProfileData();
  }
  else{
-  setUserData(false);
+  setUserData(null);
  }
  },[token]);
 

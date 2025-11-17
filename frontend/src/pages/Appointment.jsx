@@ -101,11 +101,7 @@ const bookAppointment=async()=>{
 
     const slotDate=day + "-" + month + "-" + year;
 
-    const {data}=await api.post(`/api/user/book-appointment`,{docId,slotDate,slotTime},{
-      headers:{
-        Authorization:`Bearer ${token}`
-      }
-    });
+    const {data}=await api.post(`/api/user/book-appointment`,{docId,slotDate,slotTime});
     if(data.success){
       toast.success(data.message);
       getDoctorsData();
