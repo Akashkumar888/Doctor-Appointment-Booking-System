@@ -1,4 +1,6 @@
 # Admin - Doctor Appointment Booking System
+Frontend (Patient): https://doctor-appointment-booking-system-frontend-bvsgdjcnn.vercel.app
+Admin Panel: https://doctor-appointment-booking-system-admin-otgdqp0n0.vercel.app
 
 Admin panel for managing doctors, appointments, and system operations with separate doctor portal.
 
