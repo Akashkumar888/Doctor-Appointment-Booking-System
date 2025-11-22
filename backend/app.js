@@ -10,13 +10,18 @@ import doctorRouter from './routes/doctor.route.js';
 const app=express();
 
 // ✅ Step 1: Add simple working CORS
-app.use(cors({ // ✅ Correct CORS
+app.use(cors({// ✅ Correct CORS
   origin: [
-    process.env.FRONTEND_URL,   
-    process.env.ADMIN_URL       
+    process.env.FRONTEND_URL,
+    process.env.ADMIN_URL,
+    process.env.FRONTEND_URL_2, // optional second frontend domain
+    "https://doctor-appointment-booking-system-f-gamma.vercel.app",
+    "https://doctor-appointment-booking-system-frontend-bvsgdjcnn.vercel.app"
   ],
-  credentials: true, // allows cookies and Authorization headers
-})); // it allow to connect frontend to backend
+  credentials: true,// allows cookies and Authorization headers
+}));// it allow to connect frontend to backend
+
+
 
 // middleware 
 app.use(express.json());
