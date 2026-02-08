@@ -6,66 +6,38 @@ import userRouter from "./routes/user.route.js";
 import connectCloudinary from "./configs/cloudinary.config.js";
 import adminRouter from "./routes/admin.route.js";
 import doctorRouter from "./routes/doctor.route.js";
-// app config
-const app = express();
 
+const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ✅ CORS - Permissive for all origins (Render/Vercel deployment)
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow all origins (no origin = server-to-server, Postman)
-    callback(null, true);
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  credentials: false,
-  optionsSuccessStatus: 200, // For legacy browsers
-  preflightContinue: false,
-};
+/* ✅ CORS (Express 5 safe) */
+app.use(
+  cors({
+    origin: true, // allow all origins (Render + Vercel)
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  })
+);
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Preflight for all routes
-
-// middleware
+/* Middleware */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// database connection
+/* Services */
 connectDB();
 connectCloudinary();
 
-// test route
+/* Health check */
 app.get("/", (req, res) => {
-  res.send("Server is Live!");
+  res.send("🚀 Server is Live!");
 });
 
-// debug/env route (safe - does NOT expose secrets)
-app.get("/api/debug/env", (req, res) => {
-  try {
-    res.json({
-      success: true,
-      jwtSecretSet: !!process.env.JWT_SECRET,
-      mongodbUriSet: !!process.env.MONGODB_URI,
-      adminEmailSet: !!process.env.ADMIN_EMAIL,
-      cloudinaryConfigured: !!(
-        process.env.CLOUDINARY_NAME &&
-        process.env.CLOUDINARY_API_KEY &&
-        process.env.CLOUDINARY_SECRET_KEY
-      ),
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// all /api/routes will go here later
-// api endpoints
+/* Routes */
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/doctor", doctorRouter);
-// localhost:4000/api/admin used
 
+/* Start */
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on: http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
