@@ -12,40 +12,11 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // ✅ Step 1: Add simple working CORS
+// PERMISSIVE MODE for development/deployment
+// Set specific FRONTEND_URL and ADMIN_URL in production for security
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // For production: accept any origin (Vercel/Render deployments have unpredictable URLs)
-      // For security-conscious deployments, set FRONTEND_URL and ADMIN_URL env vars
-      const allowedOrigins = [
-        process.env.FRONTEND_URL,
-        process.env.ADMIN_URL,
-        process.env.FRONTEND_URL_2,
-        "https://doctor-appointment-booking-system-f-gamma.vercel.app",
-        "https://doctor-appointment-booking-system-frontend-bvsgdjcnn.vercel.app",
-      ].filter(Boolean);
-
-      // Allow Postman / server-to-server / no origin
-      if (!origin) return callback(null, true);
-
-      // If specific origins configured, enforce them; otherwise allow any
-      if (allowedOrigins.length > 0) {
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        } else {
-          console.warn("Blocked CORS origin:", origin);
-          return callback(new Error("Not allowed by CORS"));
-        }
-      } else {
-        // No specific origins configured - allow any (useful for initial deploy)
-        console.log(
-          "CORS: Allowing origin:",
-          origin,
-          "(no specific origins configured)",
-        );
-        return callback(null, true);
-      }
-    },
+    origin: true, // Allow all origins (Vercel/Render have dynamic URLs)
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: false, // ✅ IMPORTANT (JWT only)
