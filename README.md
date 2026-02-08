@@ -4,12 +4,12 @@
 👤 Patient Frontend
 
 🌐 Live URL:
-➡ https://doctor-appointment-booking-system-frontend-bvsgdjcnn.vercel.app
+➡ https://doctor-appointment-booking-system-frontend-vrv5co5a4.vercel.app
 
 🛠 Admin Dashboard
 
 🌐 Live URL:
-➡ https://doctor-appointment-booking-system-admin-otgdqp0n0.vercel.app
+➡ https://doctor-appointment-booking-system-a-theta.vercel.app
 
 Admin panel for managing doctors, appointments, and system operations with separate doctor portal.
 
