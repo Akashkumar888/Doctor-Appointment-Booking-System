@@ -15,6 +15,8 @@ const PORT = process.env.PORT || 4000;
 app.use(
   cors({
     origin: (origin, callback) => {
+      // For production: accept any origin (Vercel/Render deployments have unpredictable URLs)
+      // For security-conscious deployments, set FRONTEND_URL and ADMIN_URL env vars
       const allowedOrigins = [
         process.env.FRONTEND_URL,
         process.env.ADMIN_URL,
@@ -23,17 +25,25 @@ app.use(
         "https://doctor-appointment-booking-system-frontend-bvsgdjcnn.vercel.app",
       ].filter(Boolean);
 
-      // Allow Postman / server-to-server
+      // Allow Postman / server-to-server / no origin
       if (!origin) return callback(null, true);
 
-      // If no allowed origins configured, allow any origin (useful on first deploy)
-      if (allowedOrigins.length === 0) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
+      // If specific origins configured, enforce them; otherwise allow any
+      if (allowedOrigins.length > 0) {
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          console.warn("Blocked CORS origin:", origin);
+          return callback(new Error("Not allowed by CORS"));
+        }
       } else {
-        console.warn("Blocked CORS origin:", origin);
-        return callback(new Error("Not allowed by CORS"));
+        // No specific origins configured - allow any (useful for initial deploy)
+        console.log(
+          "CORS: Allowing origin:",
+          origin,
+          "(no specific origins configured)",
+        );
+        return callback(null, true);
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
