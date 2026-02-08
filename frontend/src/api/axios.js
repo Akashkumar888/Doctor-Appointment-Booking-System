@@ -19,26 +19,45 @@
 
 import axios from "axios";
 
-// ✅ Create a pre-configured Axios instance
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
-  withCredentials: true, // this MUST match the backend CORS credentials:true
 });
 
-// Attach token automatically if it exists
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// REQUEST INTERCEPTOR
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+// RESPONSE INTERCEPTOR
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || "";
+
+    // 🔐 Skip redirect for auth routes
+    const isAuthRoute =
+      requestUrl.includes("/login") ||
+      requestUrl.includes("/register");
+
+    if (status === 401 && !isAuthRoute) {
+      localStorage.removeItem("token");
+      window.location.replace("/login"); // safer than href
     }
-    return config;
-  },
-  (error) => Promise.reject(error)
+
+    return Promise.reject(error);
+  }
 );
 
+export default api;
 
-export default api; // ✅ make sure this line is present
+
 
 // Now you don’t need to manually add headers like:
 // headers: { Authorization: `Bearer ${token}` }

@@ -9,17 +9,34 @@ import doctorRouter from './routes/doctor.route.js';
 // app config
 const app=express();
 
+const PORT=process.env.PORT || 4000;
+
 // ✅ Step 1: Add simple working CORS
-app.use(cors({// ✅ Correct CORS
-  origin: [
-    process.env.FRONTEND_URL,
-    process.env.ADMIN_URL,
-    process.env.FRONTEND_URL_2, // optional second frontend domain
-    "https://doctor-appointment-booking-system-f-gamma.vercel.app",
-    "https://doctor-appointment-booking-system-frontend-bvsgdjcnn.vercel.app"
-  ],
-  credentials: true,// allows cookies and Authorization headers
-}));// it allow to connect frontend to backend
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        process.env.FRONTEND_URL,
+        process.env.ADMIN_URL,
+        "https://doctor-appointment-booking-system-f-gamma.vercel.app",
+        "https://doctor-appointment-booking-system-frontend-bvsgdjcnn.vercel.app",
+      ];
+
+      // Allow Postman / server-to-server
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: false, // ✅ IMPORTANT (JWT only)
+  })
+);
+
 
 
 
@@ -44,4 +61,8 @@ app.use("/api/admin",adminRouter);
 app.use("/api/doctor",doctorRouter);
 // localhost:4000/api/admin used 
 
-export default app;
+
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on: http://localhost:${PORT}`);
+});

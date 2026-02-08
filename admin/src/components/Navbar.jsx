@@ -1,51 +1,59 @@
-
-import React, { useContext } from 'react'
-import { assets } from '../assets/assets'
-import AdminContext from '../context/AdminContext'
-import { useNavigate } from 'react-router-dom';
-import DoctorContext from '../context/DoctorContext';
-import api from '../api/axios';
-import {toast} from 'react-toastify'
+import React, { useContext } from "react";
+import { assets } from "../assets/assets";
+import AdminContext from "../context/AdminContext";
+import DoctorContext from "../context/DoctorContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const Navbar = () => {
-  const {aToken,setAToken}=useContext(AdminContext);
-  const {dToken,setDToken}=useContext(DoctorContext);
-  const navigate=useNavigate();
+  const { aToken, setAToken } = useContext(AdminContext);
+  const { dToken, setDToken } = useContext(DoctorContext);
+  const navigate = useNavigate();
 
   const logoutHandler = () => {
-  
-  if (aToken) {
-    localStorage.removeItem("aToken");
-    setAToken("");
-  }
+    const role = localStorage.getItem("role");
 
-  if (dToken) {
-    localStorage.removeItem("dToken");
-    setDToken("");
-  }
+    if (role === "admin") {
+      localStorage.removeItem("aToken");
+      setAToken("");
+    } else if (role === "doctor") {
+      localStorage.removeItem("dToken");
+      setDToken("");
+    }
 
-  toast.success("Logged out successfully");
-  navigate("/");
-};
+    // ✅ MUST remove role
+    localStorage.removeItem("role");
 
+    toast.success("Logged out successfully");
 
+    // ✅ Redirect to login
+    navigate("/login");
+  };
 
-
-  
   return (
-    <div className='flex justify-between items-center px-4 sm:px-10 py-3 border-b bg-white'>
-      <div className='flex items-center gap-2 text-xs'>
-        <img className='w-36 sm:w-40 cursor-pointer' src={assets.admin_logo} alt="" />
-        <p className='border p-2.5 py-0.5 rounded-full border-gray-500 text-gray-600'>
-          {aToken?'Admin':'Doctor'}
+    <div className="flex justify-between items-center px-4 sm:px-10 py-3 border-b bg-white">
+      <div className="flex items-center gap-2 text-xs">
+        <img
+          className="w-36 sm:w-40 cursor-pointer"
+          src={assets.admin_logo}
+          alt=""
+        />
+        <p className="border p-2.5 py-0.5 rounded-full border-gray-500 text-gray-600">
+          {aToken ? "Admin" : "Doctor"}
         </p>
       </div>
-      <button onClick={logoutHandler} className='bg-[#5F6FFF] text-white text-sm cursor-pointer px-10 py-2 rounded-full'>Logout</button>
+      <button
+        onClick={logoutHandler}
+        className="bg-[#5F6FFF] text-white text-sm cursor-pointer px-10 py-2 rounded-full"
+      >
+        Logout
+      </button>
     </div>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;
+
 
 
 // 1. localStorage.setItem(key, value)

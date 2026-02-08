@@ -13,22 +13,44 @@ const api=axios.create({
 // 🔹 Interceptor → Runs before every API request
 api.interceptors.request.use(
   (config) => {
-    const aToken = localStorage.getItem("aToken");
-    const dToken = localStorage.getItem("dToken");
-    const uToken = localStorage.getItem("token"); // USER TOKEN
+    const role = localStorage.getItem("role");
 
-    if (aToken) {
-      config.headers.Authorization = `Bearer ${aToken}`;
-    } else if (dToken) {
-      config.headers.Authorization = `Bearer ${dToken}`;
-    } else if (uToken) {
-      config.headers.Authorization = `Bearer ${uToken}`;
+    const tokenMap = {
+      admin: localStorage.getItem("aToken"),
+      doctor: localStorage.getItem("dToken"),
+      user: localStorage.getItem("token"),
+    };
+
+    const token = tokenMap[role];
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
   },
   (error) => Promise.reject(error)
 );
+
+/* ================================
+   RESPONSE INTERCEPTOR
+   → Handle token expiry (401)
+================================ */
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear all auth data
+      localStorage.clear();
+
+      // Redirect to login page
+      window.location.href = "/login";
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 
 // ✅ Now all requests automatically send the correct token. You don’t need to pass headers manually in AdminContext.jsx or Navbar.jsx.
 // Step 2: Fix AdminContext API calls

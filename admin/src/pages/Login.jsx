@@ -16,39 +16,42 @@ const Login = () => {
   const {aToken,setAToken}=useContext(AdminContext);
   const {dToken,setDToken}=useContext(DoctorContext);
 
-  const onSubmitHandler=async(event)=>{
-    event.preventDefault();
-    let url = state === 'Admin' ? 'admin' : 'doctor';
-    let token=state === 'Admin' ? 'aToken' : 'dToken';
-    let setToken=state === 'Admin' ? setAToken : setDToken
-    try {
-        const {data}=await api.post(`/api/${url}/login`,{email,password});
-        if(data.success){
-          localStorage.setItem(`${token}`,data.token); // when we reload the webpage admin login using localStorage 
-          setToken(data.token);   // ✅ update context state
-          toast.success("Login successful");
-          // ✅ Wait for context update before navigation
-          setTimeout(() => {
-            if (state === "Admin") {
-              navigate("/admin-dashboard");
-            } 
-            else {
-              navigate("/doctor-dashboard");
-            }
-          })
-        }  
-        else{
-          toast.error(data.message);
-        }
-    } catch (error) {
-      if (error.response && error.response.data && error.response.data.message) {
-      toast.error(error.response.data.message); // Shows "Invalid credentials"
+  const onSubmitHandler = async (event) => {
+  event.preventDefault();
+
+  let url = state === "Admin" ? "admin" : "doctor";
+  let tokenKey = state === "Admin" ? "aToken" : "dToken";
+  let setToken = state === "Admin" ? setAToken : setDToken;
+  let role = state === "Admin" ? "admin" : "doctor";
+
+  try {
+    const { data } = await api.post(`/api/${url}/login`, { email, password });
+
+    if (data.success) {
+      // ✅ STORE ROLE (THIS WAS MISSING)
+      localStorage.setItem("role", role);
+
+      // ✅ STORE TOKEN
+      localStorage.setItem(tokenKey, data.token);
+
+      // ✅ UPDATE CONTEXT
+      setToken(data.token);
+
+      toast.success("Login successful");
+
+      setTimeout(() => {
+        navigate(role === "admin" ? "/admin-dashboard" : "/doctor-dashboard");
+      }, 100);
     } else {
-      toast.error("Something went wrong");
+      toast.error(data.message);
     }
-    }
-    
+  } catch (error) {
+    toast.error(
+      error.response?.data?.message || "Something went wrong"
+    );
   }
+};
+
 
   return (
     <form onSubmit={onSubmitHandler} className='min-h-[80vh] flex items-center'>
