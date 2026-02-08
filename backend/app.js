@@ -11,17 +11,21 @@ const app = express();
 
 const PORT = process.env.PORT || 4000;
 
-// ✅ Step 1: Add simple working CORS
-// PERMISSIVE MODE for development/deployment
-// Set specific FRONTEND_URL and ADMIN_URL in production for security
-app.use(
-  cors({
-    origin: true, // Allow all origins (Vercel/Render have dynamic URLs)
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false, // ✅ IMPORTANT (JWT only)
-  }),
-);
+// ✅ CORS - Permissive for all origins (Render/Vercel deployment)
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow all origins (no origin = server-to-server, Postman)
+    callback(null, true);
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  credentials: false,
+  optionsSuccessStatus: 200, // For legacy browsers
+  preflightContinue: false,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Preflight for all routes
 
 // middleware
 app.use(express.json());
