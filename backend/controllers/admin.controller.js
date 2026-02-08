@@ -91,8 +91,15 @@ export const loginAdmin = async (req, res) => {
 
     const { email, password } = req.body;
 
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const expectedAdminEmail = String(process.env.ADMIN_EMAIL || "")
+      .trim()
+      .toLowerCase();
+
+    console.log("Admin login attempt:", normalizedEmail);
+
     if (
-      email !== process.env.ADMIN_EMAIL ||
+      normalizedEmail !== expectedAdminEmail ||
       password !== process.env.ADMIN_PASSWORD
     )
       return res
@@ -100,7 +107,13 @@ export const loginAdmin = async (req, res) => {
         .json({ success: false, message: "Invalid credentials" });
 
     // 🟢 CORRECT ROLE-BASED TOKEN
-    const token = generateAdminToken({ email });
+    let token;
+    try {
+      token = generateAdminToken({ email: normalizedEmail });
+    } catch (err) {
+      console.error("Admin token generation error:", err.message);
+      return res.status(500).json({ success: false, message: err.message });
+    }
 
     res.json({
       success: true,

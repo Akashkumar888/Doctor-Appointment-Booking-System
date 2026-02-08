@@ -55,6 +55,25 @@ app.get("/", (req, res) => {
   res.send("Server is Live!");
 });
 
+// debug/env route (safe - does NOT expose secrets)
+app.get("/api/debug/env", (req, res) => {
+  try {
+    res.json({
+      success: true,
+      jwtSecretSet: !!process.env.JWT_SECRET,
+      mongodbUriSet: !!process.env.MONGODB_URI,
+      adminEmailSet: !!process.env.ADMIN_EMAIL,
+      cloudinaryConfigured: !!(
+        process.env.CLOUDINARY_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_SECRET_KEY
+      ),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // all /api/routes will go here later
 // api endpoints
 app.use("/api/user", userRouter);
