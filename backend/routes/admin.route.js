@@ -6,6 +6,7 @@ const adminRouter=express.Router();
 import {body} from 'express-validator';
 import { authAdmin } from '../middlewares/authAdmin.middleware.js';
 import { changeAvailability } from '../controllers/doctor.controller.js';
+import { resetDoctorPassword } from "../controllers/admin.controller.js";
 
 
 // backend image store krne ke liye multer.diskStorage or multer.memoryStorage use krte hai for upload single image or multiple imaeges upload 
@@ -34,11 +35,15 @@ adminRouter.post("/add-doctor",
   addDoctor
 );
 
-adminRouter.post("/login",[
-  body('email').isEmail().withMessage("Invalid Email"),
-  body('password').isLength({min:8}).withMessage("Please enter a strong message"),
-], 
-  loginAdmin);
+adminRouter.post(
+  "/login",
+  [
+    body("email").isEmail().withMessage("Invalid Email"),
+    body("password").notEmpty().withMessage("Password required"),
+  ],
+  loginAdmin
+);
+
 
 
 adminRouter.post("/all-doctors",authAdmin,allDoctors);
@@ -46,5 +51,18 @@ adminRouter.post("/change-availability",authAdmin,changeAvailability);
 adminRouter.get("/appointments",authAdmin,appointmentsAdmin);
 adminRouter.post("/cancel-appointment",authAdmin,appointmentCancel);
 adminRouter.get("/dashboard",authAdmin,adminDashboard);
+
+adminRouter.post(
+  "/reset-doctor-password",
+  authAdmin,
+  [
+    body("doctorId").notEmpty().withMessage("Doctor ID required"),
+    body("newPassword")
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters"),
+  ],
+  resetDoctorPassword
+);
+
 
 export default adminRouter;

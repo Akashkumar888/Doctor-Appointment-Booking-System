@@ -13,16 +13,16 @@ const Navbar = () => {
   const { token, setToken, userData, setUserData } = useContext(AppContext);
 
   // ✅ Proper logout handler
- const logoutHandler = () => {
-  localStorage.removeItem("token");
-  setToken("");
-  setUserData(null);
+  const logoutHandler = () => {
+    setToken(""); // This will trigger useEffect in AppContext
+    setUserData(null);
 
-  toast.success("Logged out successfully");
+    toast.success("Logged out successfully");
 
-  navigate("/login", { replace: true });
-};
-
+    setTimeout(() => {
+      navigate("/login", { replace: true });
+    }, 500);
+  };
 
   return (
     <div className="flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400">

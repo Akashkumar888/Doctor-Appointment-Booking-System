@@ -22,11 +22,13 @@ const Login = () => {
     const url = state === "Sign up" ? "register" : "login";
 
     const payload =
-      state === "Sign up"
-        ? { name, email, password }
-        : { email, password };
+      state === "Sign up" ? { name, email, password } : { email, password };
 
     try {
+      // normalize email for consistency
+      if (payload.email)
+        payload.email = String(payload.email).trim().toLowerCase();
+
       const { data } = await api.post(`/api/user/${url}`, payload);
 
       if (data.success) {
@@ -57,18 +59,15 @@ const Login = () => {
   }, [token, navigate]);
 
   return (
-    <form
-      onSubmit={onSubmitHandler}
-      className="min-h-[80vh] flex items-center"
-    >
+    <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
       <div className="flex flex-col gap-3 m-auto items-start p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-zinc-600 text-sm shadow-lg">
-
         <p className="text-2xl font-semibold">
           {state === "Sign up" ? "Create Account" : "Login"}
         </p>
 
         <p>
-          Please {state === "Sign up" ? "sign up" : "log in"} to book appointment
+          Please {state === "Sign up" ? "sign up" : "log in"} to book
+          appointment
         </p>
 
         {/* FULL NAME */}

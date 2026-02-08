@@ -44,7 +44,9 @@ export const addDoctor = async (req, res) => {
       });
     }
 
-    const exists = await doctorModel.findOne({ email });
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const exists = await doctorModel.findOne({ email: normalizedEmail });
     if (exists)
       return res.json({
         success: false,
@@ -55,7 +57,7 @@ export const addDoctor = async (req, res) => {
 
     const doctorData = {
       name,
-      email,
+      email: normalizedEmail,
       password,
       speciality,
       degree,
@@ -89,7 +91,10 @@ export const loginAdmin = async (req, res) => {
 
     const { email, password } = req.body;
 
-    if (email !== process.env.ADMIN_EMAIL || password !== process.env.ADMIN_PASSWORD)
+    if (
+      email !== process.env.ADMIN_EMAIL ||
+      password !== process.env.ADMIN_PASSWORD
+    )
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
@@ -145,7 +150,7 @@ export const appointmentCancel = async (req, res) => {
     const doctor = await doctorModel.findById(docId);
 
     doctor.slots_booked[slotDate] = doctor.slots_booked[slotDate].filter(
-      (s) => s !== slotTime
+      (s) => s !== slotTime,
     );
 
     await doctor.save();
@@ -177,5 +182,58 @@ export const adminDashboard = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ================= RESET DOCTOR PASSWORD (ADMIN ONLY) ==================
+export const resetDoctorPassword = async (req, res) => {
+  try {
+    // 🔐 Verify this is an admin request
+    if (!req.admin || req.admin.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Only admin can reset passwords",
+      });
+    }
+
+    const { doctorId, newPassword } = req.body;
+
+    if (!doctorId || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor ID and new password are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+    }
+
+    const doctor = await doctorModel.findById(doctorId);
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
+    // ✅ Assign new password (bcrypt happens via pre-save hook)
+    doctor.password = newPassword;
+    await doctor.save();
+
+    res.json({
+      success: true,
+      message: "Doctor password reset successfully",
+    });
+  } catch (error) {
+    console.error("RESET PASSWORD ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

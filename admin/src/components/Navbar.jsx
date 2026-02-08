@@ -4,31 +4,37 @@ import AdminContext from "../context/AdminContext";
 import DoctorContext from "../context/DoctorContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useEffect } from "react";
 
 const Navbar = () => {
-  const { aToken, setAToken } = useContext(AdminContext);
+  const { aToken, setAToken,adminDashData } = useContext(AdminContext);
   const { dToken, setDToken } = useContext(DoctorContext);
   const navigate = useNavigate();
 
   const logoutHandler = () => {
-    const role = localStorage.getItem("role");
+  const role = localStorage.getItem("role");
 
-    if (role === "admin") {
-      localStorage.removeItem("aToken");
-      setAToken("");
-    } else if (role === "doctor") {
-      localStorage.removeItem("dToken");
-      setDToken("");
-    }
+  if (role === "admin") {
+    localStorage.removeItem("aToken");
+    setAToken(null);
+  } else if (role === "doctor") {
+    localStorage.removeItem("dToken");
+    setDToken(null);
+  } else {
+    localStorage.removeItem("token");
+  }
 
-    // ✅ MUST remove role
-    localStorage.removeItem("role");
+  localStorage.removeItem("role");
 
-    toast.success("Logged out successfully");
+  // 🛑 Prevent API calls after logout
+  window.location.replace("/login");
+};
 
-    // ✅ Redirect to login
-    navigate("/login");
-  };
+useEffect(() => {
+  if (!aToken) return;
+  adminDashData();
+}, [aToken]);
+
 
   return (
     <div className="flex justify-between items-center px-4 sm:px-10 py-3 border-b bg-white">
@@ -53,8 +59,6 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
-
 
 // 1. localStorage.setItem(key, value)
 // Stores a value (as string) under a key.

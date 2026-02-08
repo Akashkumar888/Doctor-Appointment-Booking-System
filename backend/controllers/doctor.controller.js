@@ -23,9 +23,7 @@ export const changeAvailability = async (req, res) => {
 // ================= GET DOCTOR LIST ==================
 export const doctorList = async (req, res) => {
   try {
-    const doctors = await doctorModel
-      .find({})
-      .select(["-password", "-email"]);
+    const doctors = await doctorModel.find({}).select(["-password", "-email"]);
 
     res.json({ success: true, doctors });
   } catch (error) {
@@ -46,11 +44,18 @@ export const loginDoctor = async (req, res) => {
 
     const { email, password } = req.body;
 
-    const doctor = await doctorModel.findOne({ email }).select("+password");
-    if (!doctor)
+    // normalize email to avoid case-mismatch issues
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const doctor = await doctorModel
+      .findOne({ email: normalizedEmail })
+      .select("+password");
+    if (!doctor) {
+      console.log("Doctor login failed - not found:", normalizedEmail);
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
+    }
 
     const isMatch = await doctor.comparePassword(password);
     if (!isMatch)

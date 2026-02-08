@@ -18,7 +18,9 @@ export const registerUser = async (req, res) => {
 
     const { name, email, password } = req.body;
 
-    const alreadyExists = await userModel.findOne({ email });
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const alreadyExists = await userModel.findOne({ email: normalizedEmail });
     if (alreadyExists) {
       return res.status(400).json({
         success: false,
@@ -26,7 +28,11 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const userData = await userModel.create({ name, email, password });
+    const userData = await userModel.create({
+      name,
+      email: normalizedEmail,
+      password,
+    });
 
     // 🟢 Generate NEW JWT TOKEN (role=user)
     const token = generateUserToken(userData);
@@ -54,7 +60,11 @@ export const loginUser = async (req, res) => {
 
     const { email, password } = req.body;
 
-    const user = await userModel.findOne({ email }).select("+password");
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const user = await userModel
+      .findOne({ email: normalizedEmail })
+      .select("+password");
     if (!user)
       return res
         .status(401)
@@ -106,7 +116,7 @@ export const updateProfile = async (req, res) => {
     await userModel.findByIdAndUpdate(
       userId,
       { name, phone, address: JSON.parse(address), dob, gender },
-      { new: true }
+      { new: true },
     );
 
     if (imageFile) {
@@ -129,7 +139,9 @@ export const bookAppointment = async (req, res) => {
 
     const docData = await doctorModel.findById(docId).select("-password");
     if (!docData)
-      return res.status(404).json({ success: false, message: "Doctor not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Doctor not found" });
 
     if (!docData.available)
       return res
@@ -228,7 +240,9 @@ export const createOrder = async (req, res) => {
 
 export const verifyOrder = async (req, res) => {
   try {
-    const info = await razorpayInstance.orders.fetch(req.body.razorpay_order_id);
+    const info = await razorpayInstance.orders.fetch(
+      req.body.razorpay_order_id,
+    );
 
     if (info.status === "paid") {
       await appointmentModel.findByIdAndUpdate(info.receipt, {
